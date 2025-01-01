@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>English Learning Journey</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,6 +35,21 @@
         .button:hover {
             background-color: #005f73;
         }
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .button {
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -43,16 +59,13 @@
     </header>
 
     <nav>
-        <a href="matching-game/matching-game.html" class="button">Matching Game</a>
-        <a href="fill-in-the-blanks/fill-in-the-blanks.html" class="button">Fill in the Blanks</a>
-        <a href="word-jumble/word-jumble.html" class="button">Word Jumble</a>
-        <a href="page4.html" class="button">Lesson 4</a>
-        <a href="page5.html" class="button">Lesson 5</a>
-        <a href="page6.html" class="button">Lesson 6</a>
-        <a href="page7.html" class="button">Lesson 7</a>
-        <a href="page8.html" class="button">Lesson 8</a>
-        <a href="page9.html" class="button">Lesson 9</a>
-        <a href="page10.html" class="button">Lesson 10</a>
+        <a href="matching-game/matching-game.html" class="button" aria-label="Play Matching Game">Matching Game</a>
+        <a href="fill-in-the-blanks/fill-in-the-blanks.html" class="button" aria-label="Play Fill in the Blanks">Fill in the Blanks</a>
+        <a href="word-jumble/word-jumble.html" class="button" aria-label="Play Word Jumble">Word Jumble</a>
     </nav>
+
+    <footer>
+        <p>© 2024 English Learning Journey. All rights reserved.</p>
+    </footer>
 </body>
 </html>

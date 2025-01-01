@@ -17,7 +17,7 @@
       align-items: center;
       height: 100vh;
       margin: 0;
-      overflow-y: auto;  /* Allow scrolling on small screens */
+      overflow-y: auto;
       flex-direction: column;
       padding: 10px;
     }
@@ -37,6 +37,12 @@
       margin-bottom: 20px;
     }
 
+    #lesson-select {
+      margin-bottom: 20px;
+      padding: 10px;
+      font-size: 16px;
+    }
+
     #timer {
       font-size: 18px;
       margin-bottom: 10px;
@@ -44,7 +50,7 @@
 
     .game-board {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Adjust the grid layout */
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 10px;
       justify-items: center;
       align-items: center;
@@ -127,7 +133,6 @@
       font-family: 'Arial', sans-serif;
     }
 
-    /* Responsive adjustments for narrow screens */
     @media (max-width: 600px) {
       h1 {
         font-size: 1.5rem;
@@ -151,6 +156,9 @@
 <body>
   <div class="game-container">
     <h1>Vocabulary Matching Game</h1>
+    <select id="lesson-select">
+      <option value="all">All Lessons</option>
+    </select>
     <div id="timer">Time: 0:00</div>
     <div id="game-board" class="game-board"></div>
     <div id="incorrect-popup">Incorrect! Please try again.</div>
@@ -160,28 +168,11 @@
   <div id="winner-message">您是我最優秀的學生</div>
 
   <script>
-    const words = [
-      { english: 'Experience', chinese: '经历', id: 1 },
-      { english: 'Participate', chinese: '参与', id: 2 },
-      { english: 'Exponentially', chinese: '成倍地', id: 3 },
-      { english: 'Amplified', chinese: '放大', id: 4 },
-      { english: 'Various', chinese: '各种各样', id: 5 },
-      { english: 'Sincerity', chinese: '真诚', id: 6 },
-      { english: 'Earnest', chinese: '认真的', id: 7 },
-      { english: 'Precepts', chinese: '戒律', id: 8 },
-      { english: 'Restriction', chinese: '限制', id: 9 },
-      { english: 'Enjoyable', chinese: '愉快的', id: 10 },
-      { english: 'Trapped', chinese: '困住', id: 11 },
-      { english: 'Consciousness', chinese: '意识', id: 12 },
-      { english: 'Beneficial', chinese: '有益的', id: 13 },
-      { english: 'Rescue', chinese: '救援', id: 14 },
-      { english: 'Debts', chinese: '债务', id: 15 },
-      { english: 'Interference', chinese: '干扰', id: 16 },
-      { english: 'Awareness', chinese: '意识', id: 17 },
-      { english: 'Gradually', chinese: '逐渐', id: 18 },
-      { english: 'Condenses', chinese: '凝结', id: 19 }
-    ];
+    const SHEET_ID = '13AFLVJO5m5k8mXDdo-sBod0EdZQiFTYlN47asc9yHJc';
+    const API_KEY = 'AIzaSyCUkij9fSx7DhK_jU0jji721A1x_QzSA1k';
+    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
 
+    let vocabulary = [];
     let selectedButton = null;
     let matchedPairs = 0;
     let startTime, timerInterval;
@@ -191,6 +182,7 @@
     const timerDisplay = document.getElementById('timer');
     const incorrectPopup = document.getElementById('incorrect-popup');
     const winnerMessage = document.getElementById('winner-message');
+    const lessonSelect = document.getElementById('lesson-select');
 
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
@@ -200,35 +192,30 @@
       return array;
     }
 
-    function getRandomWords() {
-      const selectedWords = [];
-      const shuffledWords = shuffleArray([...words]);
-
-      for (let i = 0; i < 8; i++) {
-        selectedWords.push(shuffledWords[i]);
+    function getRandomWords(lesson) {
+      if (lesson === 'all') {
+        return shuffleArray([...vocabulary]).slice(0, 8);
       }
-
-      return selectedWords;
+      return vocabulary.filter(word => word.lesson === lesson).slice(0, 8);
     }
 
     function createButton(word, type) {
       const button = document.createElement('button');
-      button.classList.add('button');
-      button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
+      button.classList.add('button', type === 'english' ? 'english-button' : 'chinese-button');
       button.setAttribute('data-id', word.id);
-      button.setAttribute('aria-label', type === 'english' ? word.english : word.chinese);
       button.textContent = type === 'english' ? word.english : word.chinese;
       button.addEventListener('click', () => buttonClicked(button, word, type));
       return button;
     }
 
-    function startGame() {
+    function startGame(lesson) {
       matchedPairs = 0;
       gameBoard.innerHTML = '';
       selectedButton = null;
-      const selectedWords = getRandomWords(); // Get 8 random pairs
 
+      const selectedWords = getRandomWords(lesson);
       const allButtons = [];
+
       selectedWords.forEach(word => {
         allButtons.push(createButton(word, 'english'));
         allButtons.push(createButton(word, 'chinese'));
@@ -242,9 +229,7 @@
     }
 
     function buttonClicked(button, word, type) {
-      if (selectedButton && (selectedButton.button === button || button.classList.contains('matched'))) {
-        return;
-      }
+      if (selectedButton && (selectedButton.button === button || button.classList.contains('matched'))) return;
 
       if (!selectedButton) {
         selectedButton = { button, word, type };
@@ -283,9 +268,37 @@
       setTimeout(() => (winnerMessage.style.opacity = 0), 3000);
     }
 
-    resetButton.addEventListener('click', startGame);
+    async function fetchVocabulary() {
+      const response = await fetch(SHEET_URL);
+      const data = await response.json();
+      vocabulary = data.values.slice(1).map((row, index) => ({
+        id: index + 1,
+        english: row[0],
+        chinese: row[1],
+        lesson: row[2],
+      }));
 
-    startGame();
+      const lessons = [...new Set(vocabulary.map(word => word.lesson))];
+      lessons.forEach(lesson => {
+        const option = document.createElement('option');
+        option.value = lesson;
+        option.textContent = `Lesson ${lesson}`;
+        lessonSelect.appendChild(option);
+      });
+    }
+
+    lessonSelect.addEventListener('change', () => {
+      startGame(lessonSelect.value);
+    });
+
+    resetButton.addEventListener('click', () => {
+      startGame(lessonSelect.value);
+    });
+
+    (async () => {
+      await fetchVocabulary();
+      startGame(lessonSelect.value);
+    })();
   </script>
 </body>
 </html>
