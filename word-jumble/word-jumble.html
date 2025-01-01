@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jumbled Sentence Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f8ff;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    h1 {
+      margin: 20px;
+      color: #333;
+    }
+
+    .game-container {
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 600px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .word-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    #constructed-sentence {
+      font-size: 1.2em;
+      margin: 20px 0;
+      color: #333;
+      min-height: 30px;
+    }
+
+    #score {
+      font-size: 1.5em;
+      color: #4caf50;
+      margin: 10px 0;
+    }
+
+    #skip-info, #mistakes-info {
+      font-size: 1.2em;
+      color: #f44336;
+      margin-top: 10px;
+    }
+
+    #feedback {
+      font-size: 1.2em;
+      color: #4caf50;
+      margin-top: 10px;
+      display: none;
+    }
+
+    #game-over {
+      font-size: 2em;
+      font-weight: bold;
+      color: red;
+      margin-top: 20px;
+      display: none;
+    }
+
+    #reset-btn, #skip-btn, #start-over-btn {
+      background-color: #f44336;
+      margin-top: 10px;
+    }
+
+    #reset-btn:hover, #skip-btn:hover, #start-over-btn:hover {
+      background-color: #e53935;
+    }
+
+    /* Elegant Styling for Mistakes and Skips */
+    .info {
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;
+    }
+
+    .info div {
+      font-size: 1.2em;
+      background-color: #f5f5f5;
+      padding: 8px 15px;
+      border-radius: 5px;
+      margin: 0 10px;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .info div span {
+      color: #4caf50;
+    }
+  </style>
+</head>
+<body>
+  <h1>Jumbled Sentence Game</h1>
+  <div class="game-container">
+    <div id="score">Score: 0</div>
+    <div class="info">
+      <div id="skip-info">Skips available: <span>1</span></div>
+      <div id="mistakes-info">Mistakes available: <span>0</span></div>
+    </div>
+    <div id="feedback"></div>
+    <div id="constructed-sentence">Your constructed sentence:</div>
+    <div class="word-buttons" id="word-buttons"></div>
+    <button id="skip-btn">Skip</button>
+    <button id="reset-btn">Reset Game</button>
+  </div>
+
+  <div id="game-over">Game Over! Final Score: 0</div>
+
+  <script>
+    const sentences = [
+      "Experience and sincerity amplified the benefits of various precepts.",
+      "Gradually, the awareness of the interference trapped consciousness and restricted rescue efforts.",
+      "I have a lot of experience in cooking.",
+      "She gained experience from her summer job.",
+      "I want to participate in the school play.",
+      "They will participate in the sports event."
+    ];
+
+    let remainingSentences = [...sentences];
+    let currentSentence = "";
+    let jumbledWords = [];
+    let userConstructedWords = [];
+    let score = 0;
+    let skipsAvailable = 1;
+    let incorrectAttempts = 0;
+    let gameLocked = false; // Lock the game when revealing the answer
+
+    const scoreDisplay = document.getElementById("score");
+    const skipInfoDisplay = document.getElementById("skip-info");
+    const mistakesInfoDisplay = document.getElementById("mistakes-info");
+    const wordButtonsContainer = document.getElementById("word-buttons");
+    const constructedSentenceDisplay = document.getElementById("constructed-sentence");
+    const feedbackDisplay = document.getElementById("feedback");
+    const skipButton = document.getElementById("skip-btn");
+    const resetButton = document.getElementById("reset-btn");
+
+    // Initialize the game
+    function initializeGame() {
+      if (remainingSentences.length === 0) {
+        showGameOver();
+        return;
+      }
+
+      gameLocked = false; // Unlock the game for a new round
+      const randomIndex = Math.floor(Math.random() * remainingSentences.length);
+      currentSentence = remainingSentences[randomIndex];
+      remainingSentences.splice(randomIndex, 1);
+
+      jumbledWords = shuffleArray(currentSentence.split(" "));
+      userConstructedWords = [];
+      incorrectAttempts = 0; // Reset incorrect attempts for the new sentence
+      renderButtons();
+      updateConstructedSentence();
+    }
+
+    // Shuffle words randomly
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Render buttons for the shuffled words
+    function renderButtons() {
+      wordButtonsContainer.innerHTML = "";
+      jumbledWords.forEach((word) => {
+        const button = document.createElement("button");
+        button.textContent = word;
+        button.onclick = () => handleWordClick(word, button);
+        wordButtonsContainer.appendChild(button);
+      });
+    }
+
+    // Handle word button click
+    function handleWordClick(word, button) {
+      if (gameLocked) return; // Prevent interactions when the game is locked
+
+      if (userConstructedWords.includes(word)) {
+        userConstructedWords = userConstructedWords.filter((item) => item !== word);
+        button.style.backgroundColor = "#4caf50";
+      } else {
+        userConstructedWords.push(word);
+        button.style.backgroundColor = "#ccc";
+      }
+
+      updateConstructedSentence();
+
+      // Check if the sentence is fully constructed
+      if (userConstructedWords.length === jumbledWords.length) {
+        checkSentence();
+      }
+    }
+
+    // Update the displayed constructed sentence
+    function updateConstructedSentence() {
+      constructedSentenceDisplay.textContent = userConstructedWords.join(" ");
+    }
+
+    // Check if the constructed sentence is correct
+    function checkSentence() {
+      const userSentence = userConstructedWords.join(" ");
+      if (userSentence === currentSentence) {
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+        showFeedback("🎉 Correct! You've earned a point.");
+        initializeGame();
+      } else {
+        handleMistake();
+      }
+    }
+
+    // Handle mistakes
+    function handleMistake() {
+      incorrectAttempts++;
+
+      if (incorrectAttempts >= 2) {
+        revealCorrectAnswer();
+      } else {
+        resetSelections(); // Reset selections on a mistake
+        showFeedback(`❌ Incorrect. You have ${2 - incorrectAttempts} attempt(s) left.`);
+      }
+    }
+
+    // Reset word selections
+    function resetSelections() {
+      userConstructedWords = [];
+      const buttons = wordButtonsContainer.querySelectorAll("button");
+      buttons.forEach((button) => {
+        button.style.backgroundColor = "#4caf50";
+      });
+      updateConstructedSentence();
+    }
+
+    // Reveal the correct answer
+    function revealCorrectAnswer() {
+      gameLocked = true; // Lock the game
+      constructedSentenceDisplay.textContent = `The correct sentence was: "${currentSentence}"`;
+      showFeedback(`❌ Answer revealed: "${currentSentence}".`, 5000);
+    }
+
+    // Show feedback message
+    function showFeedback(message, duration = 2000) {
+      feedbackDisplay.textContent = message;
+      feedbackDisplay.style.display = "block";
+      setTimeout(() => {
+        feedbackDisplay.style.display = "none";
+      }, duration);
+    }
+
+    // Handle skip button
+    function handleSkip() {
+      if (skipsAvailable > 0) {
+        skipsAvailable--;
+        skipInfoDisplay.textContent = `Skips available: ${skipsAvailable}`;
+        initializeGame();
+      } else {
+        showFeedback("❌ No skips available!");
+      }
+    }
+
+    // Reset the game
+    function resetGame() {
+      score = 0;
+      skipsAvailable = 1;
+      remainingSentences = [...sentences];
+      skipInfoDisplay.textContent = `Skips available: ${skipsAvailable}`;
+      scoreDisplay.textContent = "Score: 0";
+      initializeGame();
+    }
+
+    // Event Listeners
+    resetButton.onclick = resetGame;
+    skipButton.onclick = handleSkip;
+
+    // Start the game
+    initializeGame();
+  </script>
+</body>
+</html>

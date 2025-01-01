@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocabulary Matching Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow-y: auto;  /* Allow scrolling on small screens */
+      flex-direction: column;
+      padding: 10px;
+    }
+
+    .game-container {
+      text-align: center;
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 800px;
+      margin: 20px auto;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    #timer {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Adjust the grid layout */
+      gap: 10px;
+      justify-items: center;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      width: 100%;
+    }
+
+    button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      font-size: 16px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.3s, transform 0.3s;
+      width: 100%;
+      height: 100px;
+      border: none;
+      position: relative;
+    }
+
+    button:hover {
+      background-color: #ffeb3b;
+      transform: scale(1.05);
+    }
+
+    .english-button {
+      background-color: #ffeb3b;
+    }
+
+    .chinese-button {
+      background-color: #f8d7da;
+    }
+
+    button.selected {
+      background-color: #ffa500;
+    }
+
+    button.matched {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    button:active {
+      transform: scale(1);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+    }
+
+    #incorrect-popup {
+      display: none;
+      background-color: #f8d7da;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    #winner-message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #4caf50;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      z-index: 10;
+      font-family: 'Arial', sans-serif;
+    }
+
+    /* Responsive adjustments for narrow screens */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 15px;
+      }
+
+      .game-container {
+        padding: 15px;
+      }
+
+      #timer {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Vocabulary Matching Game</h1>
+    <div id="timer">Time: 0:00</div>
+    <div id="game-board" class="game-board"></div>
+    <div id="incorrect-popup">Incorrect! Please try again.</div>
+    <button id="reset-button">Reset</button>
+  </div>
+
+  <div id="winner-message">您是我最優秀的學生</div>
+
+  <script>
+    const words = [
+      { english: 'Experience', chinese: '经历', id: 1 },
+      { english: 'Participate', chinese: '参与', id: 2 },
+      { english: 'Exponentially', chinese: '成倍地', id: 3 },
+      { english: 'Amplified', chinese: '放大', id: 4 },
+      { english: 'Various', chinese: '各种各样', id: 5 },
+      { english: 'Sincerity', chinese: '真诚', id: 6 },
+      { english: 'Earnest', chinese: '认真的', id: 7 },
+      { english: 'Precepts', chinese: '戒律', id: 8 },
+      { english: 'Restriction', chinese: '限制', id: 9 },
+      { english: 'Enjoyable', chinese: '愉快的', id: 10 },
+      { english: 'Trapped', chinese: '困住', id: 11 },
+      { english: 'Consciousness', chinese: '意识', id: 12 },
+      { english: 'Beneficial', chinese: '有益的', id: 13 },
+      { english: 'Rescue', chinese: '救援', id: 14 },
+      { english: 'Debts', chinese: '债务', id: 15 },
+      { english: 'Interference', chinese: '干扰', id: 16 },
+      { english: 'Awareness', chinese: '意识', id: 17 },
+      { english: 'Gradually', chinese: '逐渐', id: 18 },
+      { english: 'Condenses', chinese: '凝结', id: 19 }
+    ];
+
+    let selectedButton = null;
+    let matchedPairs = 0;
+    let startTime, timerInterval;
+
+    const gameBoard = document.getElementById('game-board');
+    const resetButton = document.getElementById('reset-button');
+    const timerDisplay = document.getElementById('timer');
+    const incorrectPopup = document.getElementById('incorrect-popup');
+    const winnerMessage = document.getElementById('winner-message');
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function getRandomWords() {
+      const selectedWords = [];
+      const shuffledWords = shuffleArray([...words]);
+
+      for (let i = 0; i < 8; i++) {
+        selectedWords.push(shuffledWords[i]);
+      }
+
+      return selectedWords;
+    }
+
+    function createButton(word, type) {
+      const button = document.createElement('button');
+      button.classList.add('button');
+      button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
+      button.setAttribute('data-id', word.id);
+      button.setAttribute('aria-label', type === 'english' ? word.english : word.chinese);
+      button.textContent = type === 'english' ? word.english : word.chinese;
+      button.addEventListener('click', () => buttonClicked(button, word, type));
+      return button;
+    }
+
+    function startGame() {
+      matchedPairs = 0;
+      gameBoard.innerHTML = '';
+      selectedButton = null;
+      const selectedWords = getRandomWords(); // Get 8 random pairs
+
+      const allButtons = [];
+      selectedWords.forEach(word => {
+        allButtons.push(createButton(word, 'english'));
+        allButtons.push(createButton(word, 'chinese'));
+      });
+
+      const shuffledButtons = shuffleArray(allButtons);
+      shuffledButtons.forEach(button => gameBoard.appendChild(button));
+
+      startTime = Date.now();
+      timerInterval = setInterval(updateTimer, 100);
+    }
+
+    function buttonClicked(button, word, type) {
+      if (selectedButton && (selectedButton.button === button || button.classList.contains('matched'))) {
+        return;
+      }
+
+      if (!selectedButton) {
+        selectedButton = { button, word, type };
+        button.classList.add('selected');
+        return;
+      }
+
+      if (selectedButton.word.id === word.id) {
+        matchedPairs++;
+        selectedButton.button.classList.add('matched');
+        button.classList.add('matched');
+        selectedButton = null;
+
+        if (matchedPairs === 8) {
+          clearInterval(timerInterval);
+          showWinnerMessage();
+        }
+      } else {
+        incorrectPopup.style.display = 'block';
+        setTimeout(() => (incorrectPopup.style.display = 'none'), 1000);
+        selectedButton.button.classList.remove('selected');
+        selectedButton = null;
+      }
+    }
+
+    function updateTimer() {
+      const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+      const minutes = Math.floor(elapsedTime / 60);
+      const seconds = elapsedTime % 60;
+      timerDisplay.textContent = `Time: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    function showWinnerMessage() {
+      winnerMessage.style.opacity = 1;
+      winnerMessage.textContent = `您是我最優秀的學生! 完成时间: ${timerDisplay.textContent}`;
+      setTimeout(() => (winnerMessage.style.opacity = 0), 3000);
+    }
+
+    resetButton.addEventListener('click', startGame);
+
+    startGame();
+  </script>
+</body>
+</html>
