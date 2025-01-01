@@ -15,7 +15,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       margin: 0;
       overflow-y: auto;
       flex-direction: column;
@@ -50,13 +50,14 @@
 
     .game-board {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 10px;
       justify-items: center;
       align-items: center;
       margin-bottom: 20px;
       padding: 10px;
       width: 100%;
+      overflow-x: hidden;
     }
 
     button {
@@ -120,10 +121,12 @@
     }
 
     #winner-message {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      position: fixed;
+      inset: 0;
       font-size: 2.5rem;
       font-weight: bold;
       color: #4caf50;
@@ -141,6 +144,7 @@
       button {
         font-size: 14px;
         padding: 15px;
+        height: 80px;
       }
 
       .game-container {
@@ -149,6 +153,18 @@
 
       #timer {
         font-size: 16px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      button {
+        font-size: 12px;
+        padding: 10px;
+        height: 80px;
+      }
+
+      h1 {
+        font-size: 1.2rem;
       }
     }
   </style>
@@ -264,7 +280,7 @@
 
     function showWinnerMessage() {
       winnerMessage.style.opacity = 1;
-      winnerMessage.textContent = `您是我最優秀的學生! 完成时间: ${timerDisplay.textContent}`;
+      winnerMessage.textContent = `您是我最優秀的學生! 完成時間: ${timerDisplay.textContent}`;
       setTimeout(() => (winnerMessage.style.opacity = 0), 3000);
     }
 
