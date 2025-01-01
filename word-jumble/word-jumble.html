@@ -90,16 +90,15 @@
       display: none;
     }
 
-    #reset-btn, #skip-btn, #start-over-btn {
+    #reset-btn, #skip-btn {
       background-color: #f44336;
       margin-top: 10px;
     }
 
-    #reset-btn:hover, #skip-btn:hover, #start-over-btn:hover {
+    #reset-btn:hover, #skip-btn:hover {
       background-color: #e53935;
     }
 
-    /* Elegant Styling for Mistakes and Skips */
     .info {
       display: flex;
       justify-content: center;
@@ -139,23 +138,17 @@
   <div id="game-over">Game Over! Final Score: 0</div>
 
   <script>
-    const sentences = [
-      "Experience and sincerity amplified the benefits of various precepts.",
-      "Gradually, the awareness of the interference trapped consciousness and restricted rescue efforts.",
-      "I have a lot of experience in cooking.",
-      "She gained experience from her summer job.",
-      "I want to participate in the school play.",
-      "They will participate in the sports event."
-    ];
-
-    let remainingSentences = [...sentences];
+    const sheetId = "1Y2f_wlC3eQwOwdRpGdDqQfV9run3u6JUMO36QC7DcFo";
+    const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+    let sentences = [];
+    let remainingSentences = [];
     let currentSentence = "";
     let jumbledWords = [];
     let userConstructedWords = [];
     let score = 0;
     let skipsAvailable = 1;
     let incorrectAttempts = 0;
-    let gameLocked = false; // Lock the game when revealing the answer
+    let gameLocked = false;
 
     const scoreDisplay = document.getElementById("score");
     const skipInfoDisplay = document.getElementById("skip-info");
@@ -166,26 +159,42 @@
     const skipButton = document.getElementById("skip-btn");
     const resetButton = document.getElementById("reset-btn");
 
-    // Initialize the game
+    async function fetchSentences() {
+      try {
+        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?key=${apiKey}`);
+        const data = await response.json();
+
+        if (data.values) {
+          sentences = data.values.flat();
+          remainingSentences = [...sentences];
+          initializeGame();
+        } else {
+          alert("No sentences found in the Google Sheet!");
+        }
+      } catch (error) {
+        console.error("Error fetching sentences:", error);
+        alert("Failed to fetch sentences from Google Sheets.");
+      }
+    }
+
     function initializeGame() {
       if (remainingSentences.length === 0) {
         showGameOver();
         return;
       }
 
-      gameLocked = false; // Unlock the game for a new round
+      gameLocked = false;
       const randomIndex = Math.floor(Math.random() * remainingSentences.length);
       currentSentence = remainingSentences[randomIndex];
       remainingSentences.splice(randomIndex, 1);
 
       jumbledWords = shuffleArray(currentSentence.split(" "));
       userConstructedWords = [];
-      incorrectAttempts = 0; // Reset incorrect attempts for the new sentence
+      incorrectAttempts = 0;
       renderButtons();
       updateConstructedSentence();
     }
 
-    // Shuffle words randomly
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -194,7 +203,6 @@
       return array;
     }
 
-    // Render buttons for the shuffled words
     function renderButtons() {
       wordButtonsContainer.innerHTML = "";
       jumbledWords.forEach((word) => {
@@ -205,9 +213,8 @@
       });
     }
 
-    // Handle word button click
     function handleWordClick(word, button) {
-      if (gameLocked) return; // Prevent interactions when the game is locked
+      if (gameLocked) return;
 
       if (userConstructedWords.includes(word)) {
         userConstructedWords = userConstructedWords.filter((item) => item !== word);
@@ -219,18 +226,15 @@
 
       updateConstructedSentence();
 
-      // Check if the sentence is fully constructed
       if (userConstructedWords.length === jumbledWords.length) {
         checkSentence();
       }
     }
 
-    // Update the displayed constructed sentence
     function updateConstructedSentence() {
       constructedSentenceDisplay.textContent = userConstructedWords.join(" ");
     }
 
-    // Check if the constructed sentence is correct
     function checkSentence() {
       const userSentence = userConstructedWords.join(" ");
       if (userSentence === currentSentence) {
@@ -243,19 +247,16 @@
       }
     }
 
-    // Handle mistakes
     function handleMistake() {
       incorrectAttempts++;
-
       if (incorrectAttempts >= 2) {
         revealCorrectAnswer();
       } else {
-        resetSelections(); // Reset selections on a mistake
+        resetSelections();
         showFeedback(`❌ Incorrect. You have ${2 - incorrectAttempts} attempt(s) left.`);
       }
     }
 
-    // Reset word selections
     function resetSelections() {
       userConstructedWords = [];
       const buttons = wordButtonsContainer.querySelectorAll("button");
@@ -265,14 +266,12 @@
       updateConstructedSentence();
     }
 
-    // Reveal the correct answer
     function revealCorrectAnswer() {
-      gameLocked = true; // Lock the game
+      gameLocked = true;
       constructedSentenceDisplay.textContent = `The correct sentence was: "${currentSentence}"`;
       showFeedback(`❌ Answer revealed: "${currentSentence}".`, 5000);
     }
 
-    // Show feedback message
     function showFeedback(message, duration = 2000) {
       feedbackDisplay.textContent = message;
       feedbackDisplay.style.display = "block";
@@ -281,7 +280,6 @@
       }, duration);
     }
 
-    // Handle skip button
     function handleSkip() {
       if (skipsAvailable > 0) {
         skipsAvailable--;
@@ -292,7 +290,6 @@
       }
     }
 
-    // Reset the game
     function resetGame() {
       score = 0;
       skipsAvailable = 1;
@@ -302,12 +299,10 @@
       initializeGame();
     }
 
-    // Event Listeners
     resetButton.onclick = resetGame;
     skipButton.onclick = handleSkip;
 
-    // Start the game
-    initializeGame();
+    fetchSentences();
   </script>
 </body>
 </html>
