@@ -7,34 +7,97 @@
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
       font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      background-color: #f4f4f9;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      overflow-y: auto;
-      flex-direction: column;
-      padding: 10px;
-    }
-
-    .game-container {
-      text-align: center;
+      height: 100%;
+      min-height: 100vh; /* Ensures the body takes full screen height */
       padding: 20px;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 800px;
-      margin: 20px auto;
+      overflow-y: auto; /* Allows scrolling if content overflows */
     }
 
     h1 {
+      text-align: center;
       margin-bottom: 20px;
+      color: #333;
+      font-size: 24px;
+    }
+
+    #timer {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      height: auto; /* Allows container to grow with content */
+      margin-bottom: 20px; /* Space at the bottom to prevent cutoff */
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: #ffeb3b;
+      border: none;
+      padding: 15px;
+      font-size: 18px;
+      color: #333;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #ff9800;
+    }
+
+    button.selected {
+      background-color: #ff5722;
+      color: #fff;
+    }
+
+    button.matched {
+      background-color: #4caf50;
+      color: #fff;
+      pointer-events: none;
+    }
+
+    #reset-button {
+      background-color: #009688;
+      color: white;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 8px;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    #winner-message {
+      font-size: 24px;
+      color: #4caf50;
+      display: none;
+      margin-top: 20px;
     }
 
     #lesson-select {
@@ -42,150 +105,28 @@
       padding: 10px;
       font-size: 16px;
     }
-
-    #timer {
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    .game-board {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 10px;
-      justify-items: center;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 10px;
-      width: 100%;
-      overflow-x: hidden;
-    }
-
-    button {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      font-size: 16px;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: background-color 0.3s, transform 0.3s;
-      width: 100%;
-      height: 100px;
-      border: none;
-      position: relative;
-    }
-
-    button:hover {
-      background-color: #ffeb3b;
-      transform: scale(1.05);
-    }
-
-    .english-button {
-      background-color: #ffeb3b;
-    }
-
-    .chinese-button {
-      background-color: #f8d7da;
-    }
-
-    button.selected {
-      background-color: #ffa500;
-    }
-
-    button.matched {
-      opacity: 0;
-      pointer-events: none;
-      position: absolute;
-    }
-
-    button:focus {
-      outline: none;
-    }
-
-    button:active {
-      transform: scale(1);
-    }
-
-    button:disabled {
-      cursor: not-allowed;
-    }
-
-    #incorrect-popup {
-      display: none;
-      background-color: #f8d7da;
-      padding: 10px;
-      border-radius: 4px;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    #winner-message {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      position: fixed;
-      inset: 0;
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: #4caf50;
-      opacity: 0;
-      transition: opacity 1s ease-in-out;
-      z-index: 10;
-      font-family: 'Arial', sans-serif;
-    }
-
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 1.5rem;
-      }
-
-      button {
-        font-size: 14px;
-        padding: 15px;
-        height: 80px;
-      }
-
-      .game-container {
-        padding: 15px;
-      }
-
-      #timer {
-        font-size: 16px;
-      }
-    }
-
-    @media (max-width: 400px) {
-      button {
-        font-size: 12px;
-        padding: 10px;
-        height: 80px;
-      }
-
-      h1 {
-        font-size: 1.2rem;
-      }
-    }
   </style>
 </head>
 <body>
+
   <div class="game-container">
     <h1>Vocabulary Matching Game</h1>
     <select id="lesson-select">
       <option value="all">All Lessons</option>
     </select>
     <div id="timer">Time: 0:00</div>
+
     <div id="game-board" class="game-board"></div>
-    <div id="incorrect-popup">Incorrect! Please try again.</div>
-    <button id="reset-button">Reset</button>
+
+    <button id="reset-button">Restart Game</button>
+
+    <div id="winner-message">Congratulations! You matched all words!</div>
   </div>
 
-  <div id="winner-message">您是我最優秀的學生</div>
-
   <script>
-    const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s';
-    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+    // Google Sheets API variables
+    const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s'; // Replace with your actual Google Sheets ID
+    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ'; // Replace with your actual API key
     const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
 
     let vocabulary = [];
@@ -196,7 +137,6 @@
     const gameBoard = document.getElementById('game-board');
     const resetButton = document.getElementById('reset-button');
     const timerDisplay = document.getElementById('timer');
-    const incorrectPopup = document.getElementById('incorrect-popup');
     const winnerMessage = document.getElementById('winner-message');
     const lessonSelect = document.getElementById('lesson-select');
 
@@ -208,19 +148,12 @@
       return array;
     }
 
-    function getRandomWords(lesson) {
-      if (lesson === 'all') {
-        return shuffleArray([...vocabulary]).slice(0, 8);
-      }
-      return vocabulary.filter(word => word.lesson === lesson).slice(0, 8);
-    }
-
     function createButton(word, type) {
       const button = document.createElement('button');
-      button.classList.add('button', type === 'english' ? 'english-button' : 'chinese-button');
+      button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
       button.setAttribute('data-id', word.id);
       button.textContent = type === 'english' ? word.english : word.chinese;
-      button.addEventListener('click', () => buttonClicked(button, word, type));
+      button.onclick = () => buttonClicked(button, word, type);
       return button;
     }
 
@@ -230,6 +163,7 @@
       selectedButton = null;
 
       const selectedWords = getRandomWords(lesson);
+
       const allButtons = [];
 
       selectedWords.forEach(word => {
@@ -245,7 +179,7 @@
     }
 
     function buttonClicked(button, word, type) {
-      if (selectedButton && (selectedButton.button === button || button.classList.contains('matched'))) return;
+      if (selectedButton && selectedButton.button === button) return;
 
       if (!selectedButton) {
         selectedButton = { button, word, type };
@@ -253,21 +187,22 @@
         return;
       }
 
-      if (selectedButton.word.id === word.id) {
+      if (selectedButton.word.id === word.id && selectedButton.type !== type) {
         matchedPairs++;
         selectedButton.button.classList.add('matched');
         button.classList.add('matched');
         selectedButton = null;
 
-        if (matchedPairs === 8) {
+        if (matchedPairs === Math.floor(gameBoard.children.length / 2)) {
           clearInterval(timerInterval);
           showWinnerMessage();
         }
       } else {
-        incorrectPopup.style.display = 'block';
-        setTimeout(() => (incorrectPopup.style.display = 'none'), 1000);
-        selectedButton.button.classList.remove('selected');
-        selectedButton = null;
+        setTimeout(() => {
+          selectedButton.button.classList.remove('selected');
+          button.classList.remove('selected');
+          selectedButton = null;
+        }, 500);
       }
     }
 
@@ -279,11 +214,17 @@
     }
 
     function showWinnerMessage() {
-      winnerMessage.style.opacity = 1;
-      winnerMessage.textContent = `您是我最優秀的學生! 完成時間: ${timerDisplay.textContent}`;
-      setTimeout(() => (winnerMessage.style.opacity = 0), 3000);
+      winnerMessage.style.display = 'block';
     }
 
+    function getRandomWords(lesson) {
+      if (lesson === 'all') {
+        return shuffleArray(vocabulary).slice(0, 10);
+      }
+      return vocabulary.filter(word => word.lesson === lesson).slice(0, 10);
+    }
+
+    // Fetch vocabulary data from Google Sheets API
     async function fetchVocabulary() {
       const response = await fetch(SHEET_URL);
       const data = await response.json();
@@ -301,20 +242,21 @@
         option.textContent = `Lesson ${lesson}`;
         lessonSelect.appendChild(option);
       });
-    }
 
-    lessonSelect.addEventListener('change', () => {
       startGame(lessonSelect.value);
-    });
+    }
 
     resetButton.addEventListener('click', () => {
       startGame(lessonSelect.value);
     });
 
-    (async () => {
-      await fetchVocabulary();
+    lessonSelect.addEventListener('change', () => {
       startGame(lessonSelect.value);
-    })();
+    });
+
+    // Fetch vocabulary and start game
+    fetchVocabulary();
   </script>
+
 </body>
 </html>
