@@ -25,6 +25,7 @@
       background: white;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: none;
     }
 
     .word-buttons {
@@ -101,9 +102,17 @@
       border-color: #4caf50;
     }
 
+    #start-btn, #reset-btn {
+      background-color: #007bff;
+      margin-top: 10px;
+    }
+
+    #start-btn:hover {
+      background-color: #0056b3;
+    }
+
     #reset-btn {
       background-color: #f44336;
-      margin-top: 10px;
     }
 
     #reset-btn:hover {
@@ -113,17 +122,15 @@
 </head>
 <body>
   <h1>Jumbled Sentence Game</h1>
-  <div class="game-container">
-    <div>
-      <label for="lesson-select" style="font-size: 1.2em; color: #333; margin-right: 10px;">Select Lesson:</label>
-      <select id="lesson-select" style="padding: 8px 12px; font-size: 1em; border-radius: 5px; border: 1px solid #ccc;">
-        <option value="all">All Lessons</option>
-        <option value="1">Lesson 1</option>
-        <option value="2">Lesson 2</option>
-        <option value="3">Lesson 3</option>
-        <!-- Add more lessons as needed -->
-      </select>
-    </div>
+  <div>
+    <label for="lesson-select" style="font-size: 1.2em; color: #333; margin-right: 10px;">Select Lesson:</label>
+    <select id="lesson-select" style="padding: 8px 12px; font-size: 1em; border-radius: 5px; border: 1px solid #ccc;">
+      <!-- Options will be populated dynamically -->
+    </select>
+    <button id="start-btn">Start Game</button>
+  </div>
+
+  <div class="game-container" id="game-container">
     <div id="score">Score: 0</div>
     <div id="feedback"></div>
     <div id="constructed-sentence">Your constructed sentence:</div>
@@ -134,69 +141,83 @@
   <div id="game-over">Game Over! Final Score: 0</div>
 
   <script>
-    const sheetId = "1Y2f_wlC3eQwOwdRpGdDqQfV9run3u6JUMO36QC7DcFo";
-    const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+    const sheetId = "1Y2f_wlC3eQwOwdRpGdDqQfV9run3u6JUMO36QC7DcFo"; // Replace with your Sheet ID
+    const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ"; // Replace with your API Key
 
     let remainingSentences = [];
     let currentSentence = "";
     let jumbledWords = [];
     let userConstructedWords = [];
     let score = 0;
-    let attemptCount = 0;  // Track the number of attempts
+    let attemptCount = 0;
 
+    const gameContainer = document.getElementById("game-container");
+    const lessonSelect = document.getElementById("lesson-select");
+    const startButton = document.getElementById("start-btn");
     const scoreDisplay = document.getElementById("score");
     const wordButtonsContainer = document.getElementById("word-buttons");
     const constructedSentenceDisplay = document.getElementById("constructed-sentence");
     const feedbackDisplay = document.getElementById("feedback");
     const resetButton = document.getElementById("reset-btn");
 
-    // Fetch sentences based on the selected lesson
-    async function fetchSentences() {
-      const selectedLesson = document.getElementById("lesson-select").value;
-      const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A:B?key=${apiKey}`;
-
+    async function fetchLessons() {
+      const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!B:B?key=${apiKey}`;
       try {
         const response = await fetch(apiUrl);
         const data = await response.json();
+        if (!data.values) return;
+        const lessons = [...new Set(data.values.flat())].filter((lesson) => lesson !== "Lesson");
+        populateDropdown(lessons);
+      } catch (error) {
+        console.error("Error fetching lessons:", error);
+      }
+    }
 
-        if (!data.values) {
-          console.error("No data found in the sheet.");
-          return;
-        }
+    function populateDropdown(lessons) {
+      lessonSelect.innerHTML = '<option value="all">All Lessons</option>';
+      lessons.forEach((lesson) => {
+        const option = document.createElement("option");
+        option.value = lesson;
+        option.textContent = lesson;
+        lessonSelect.appendChild(option);
+      });
+    }
 
+    async function fetchSentences() {
+      const selectedLesson = lessonSelect.value;
+      const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A:B?key=${apiKey}`;
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        if (!data.values) return;
         const allSentences = data.values.filter((row) => row.length >= 2);
-        if (selectedLesson === "all") {
-          remainingSentences = allSentences.map((row) => row[0]);
-        } else {
-          remainingSentences = allSentences
-            .filter((row) => row[1] === selectedLesson)
-            .map((row) => row[0]);
-        }
-
-        resetGame();
+        remainingSentences =
+          selectedLesson === "all"
+            ? allSentences.map((row) => row[0])
+            : allSentences.filter((row) => row[1] === selectedLesson).map((row) => row[0]);
+        initializeGame();
+        gameContainer.style.display = "block";
+        startButton.style.display = "none";
       } catch (error) {
         console.error("Error fetching sentences:", error);
       }
     }
 
-    // Initialize the game
     function initializeGame() {
       if (remainingSentences.length === 0) {
         showGameOver();
         return;
       }
-
       const randomIndex = Math.floor(Math.random() * remainingSentences.length);
       currentSentence = remainingSentences[randomIndex];
       remainingSentences.splice(randomIndex, 1);
-
       jumbledWords = shuffleArray(currentSentence.split(" "));
       userConstructedWords = [];
+      attemptCount = 0;
       renderButtons();
       updateConstructedSentence();
     }
 
-    // Shuffle words randomly
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -205,7 +226,6 @@
       return array;
     }
 
-    // Render buttons for the shuffled words
     function renderButtons() {
       wordButtonsContainer.innerHTML = "";
       jumbledWords.forEach((word) => {
@@ -216,77 +236,57 @@
       });
     }
 
-    // Handle word button click
     function handleWordClick(word, button) {
       userConstructedWords.push(word);
       button.disabled = true;
       updateConstructedSentence();
-
-      if (userConstructedWords.length === jumbledWords.length) {
-        checkSentence();
-      }
+      if (userConstructedWords.length === jumbledWords.length) checkSentence();
     }
 
-    // Update the displayed constructed sentence
     function updateConstructedSentence() {
       constructedSentenceDisplay.textContent = userConstructedWords.join(" ");
     }
 
-    // Check if the constructed sentence is correct
     function checkSentence() {
       const userSentence = userConstructedWords.join(" ");
-      
       if (userSentence === currentSentence) {
         score++;
+        feedbackDisplay.textContent = "🎉 Correct!";
         scoreDisplay.textContent = `Score: ${score}`;
-        showFeedback("🎉 Correct! You've earned a point.");
         initializeGame();
       } else {
         attemptCount++;
-        
-        if (attemptCount >= 2) {
-          showFeedback(`❌ Incorrect. The correct sentence is: "${currentSentence}"`);
-          resetSelections();
-          attemptCount = 0; // Reset attempt count after revealing answer
+        if (attemptCount === 2) {
+          feedbackDisplay.textContent = `❌ Incorrect. The correct sentence is: "${currentSentence}"`;
+          initializeGame();
         } else {
-          showFeedback("❌ Incorrect. Try again.");
+          feedbackDisplay.textContent = "❌ Incorrect. Try again.";
           resetSelections();
         }
       }
     }
 
-    // Reset word selections
     function resetSelections() {
       userConstructedWords = [];
       renderButtons();
       updateConstructedSentence();
     }
 
-    // Show feedback message
-    function showFeedback(message) {
-      feedbackDisplay.textContent = message;
-    }
-
-    // Reset the game
     function resetGame() {
       score = 0;
       scoreDisplay.textContent = "Score: 0";
-      attemptCount = 0; // Reset attempt count at game reset
+      feedbackDisplay.textContent = "";
       initializeGame();
-      feedbackDisplay.textContent = ''; // Clear feedback when resetting
     }
 
-    // Show game over message
     function showGameOver() {
       document.getElementById("game-over").style.display = "block";
     }
 
-    // Event Listeners
     resetButton.onclick = resetGame;
-    document.getElementById("lesson-select").addEventListener("change", fetchSentences);
+    startButton.onclick = fetchSentences;
 
-    // Start the game
-    fetchSentences();
+    fetchLessons();
   </script>
 </body>
 </html>
