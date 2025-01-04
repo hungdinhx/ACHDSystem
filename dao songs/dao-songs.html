@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Drive Video Embed</title>
+  <style>
+    /* General Reset */
+    body, h1, p {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      color: #4CAF50;
+    }
+
+    p {
+      font-size: 1em;
+      margin-bottom: 20px;
+      text-align: center;
+      line-height: 1.5em;
+    }
+
+    /* Video Container */
+    .video-container {
+      width: 100%;
+      max-width: 360px; /* Perfect for phones; adjusts on larger screens */
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      height: 202.5px; /* 16:9 Aspect Ratio */
+      border: none;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #777;
+      text-align: center;
+    }
+
+    /* Responsive Design */
+    @media (min-width: 600px) {
+      h1 {
+        font-size: 2.4em;
+      }
+
+      p {
+        font-size: 1.2em;
+        max-width: 600px;
+      }
+
+      .video-container {
+        max-width: 720px;
+      }
+
+      iframe {
+        height: 405px; /* Adjusted for larger screens */
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Watch Your Video</h1>
+  <p>
+    Enjoy streaming videos directly from Google Drive. This is an example of a responsive and cleanly designed video embed.
+  </p>
+
+  <div class="video-container">
+    <!-- Replace FILE_ID with your actual file ID -->
+    <iframe src="https://drive.google.com/file/d/1m7mnFOBXgvuf9MpC6W0HVt8MoaHo7tFT/preview" allowfullscreen></iframe>
+  </div>
+
+  <footer>
+    Powered by Google Drive | YourVideo © 2025
+  </footer>
+</body>
+</html>
