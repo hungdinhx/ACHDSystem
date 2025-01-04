@@ -3,55 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scrollable Video App with Navigation</title>
+  <title>Scrollable Video App with Stylish Navigation</title>
   <style>
     body, html {
       margin: 0;
       padding: 0;
       height: 100%;
-      overflow: auto; /* Allow scrolling on the page */
+      overflow: auto;
       font-family: Arial, sans-serif;
     }
 
+    /* Navigation Bar */
     #navbar {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
-      height: 50px;
-      background: #333;
+      height: 60px;
+      background: linear-gradient(90deg, #4a90e2, #003366); /* Gradient background */
       color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-sizing: border-box;
-      padding: 0 10px;
+      padding: 0 20px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
       z-index: 1000;
+      box-sizing: border-box;
     }
 
+    /* Buttons */
     #navbar button {
-      background: #555;
+      background: #0066cc;
       color: #fff;
       border: none;
-      height: 100%; /* Match the height of the navbar */
-      padding: 0 20px; /* Adjust button width */
+      height: 40px;
+      width: 60px; /* Uniform width for buttons */
       cursor: pointer;
-      border-radius: 0; /* Remove border radius for uniformity */
-      font-size: 18px; /* Make the button text more prominent */
+      border-radius: 5px; /* Rounded edges */
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* Subtle button shadow */
+      transition: transform 0.2s, background 0.3s ease;
     }
 
+    /* Hover and Active Effects */
     #navbar button:hover {
-      background: #777;
+      background: #004a99; /* Darker blue for hover effect */
+      transform: scale(1.1); /* Slight zoom effect on hover */
     }
 
+    #navbar button:active {
+      transform: scale(0.95); /* Press effect */
+    }
+
+    /* Video Container */
     #video-container {
-      margin-top: 50px; /* Offset for the navbar */
-      height: calc(100vh - 50px);
+      margin-top: 60px; /* Offset for the navbar */
+      height: calc(100vh - 60px);
       overflow-y: scroll;
       scroll-snap-type: y mandatory;
       -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
     }
 
+    /* Video Wrapper */
     .video-wrapper {
       height: 100vh;
       scroll-snap-align: start;
