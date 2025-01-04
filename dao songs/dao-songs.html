@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scrollable Video App with Stylish Navigation</title>
+  <title>Dynamic Video Reel</title>
   <style>
     body, html {
       margin: 0;
@@ -13,59 +13,54 @@
       font-family: Arial, sans-serif;
     }
 
-    /* Navigation Bar */
     #navbar {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 60px;
-      background: linear-gradient(90deg, #4a90e2, #003366); /* Gradient background */
+      background: linear-gradient(90deg, #4a90e2, #003366);
       color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 0 20px;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
       z-index: 1000;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
       box-sizing: border-box;
     }
 
-    /* Buttons */
     #navbar button {
       background: #0066cc;
       color: #fff;
       border: none;
       height: 40px;
-      width: 60px; /* Uniform width for buttons */
+      width: 60px;
       cursor: pointer;
-      border-radius: 5px; /* Rounded edges */
+      border-radius: 5px;
       font-size: 18px;
       font-weight: bold;
-      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* Subtle button shadow */
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
       transition: transform 0.2s, background 0.3s ease;
     }
 
-    /* Hover and Active Effects */
     #navbar button:hover {
-      background: #004a99; /* Darker blue for hover effect */
-      transform: scale(1.1); /* Slight zoom effect on hover */
+      background: #004a99;
+      transform: scale(1.1);
     }
 
     #navbar button:active {
-      transform: scale(0.95); /* Press effect */
+      transform: scale(0.95);
     }
 
-    /* Video Container */
     #video-container {
-      margin-top: 60px; /* Offset for the navbar */
+      margin-top: 60px;
       height: calc(100vh - 60px);
       overflow-y: scroll;
       scroll-snap-type: y mandatory;
-      -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+      -webkit-overflow-scrolling: touch;
     }
 
-    /* Video Wrapper */
     .video-wrapper {
       height: 100vh;
       scroll-snap-align: start;
@@ -92,38 +87,64 @@
   </div>
 
   <!-- Video Container -->
-  <div id="video-container">
-    <div class="video-wrapper">
-      <iframe src="https://www.youtube.com/embed/SL_dDZzKtZg?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>
-    <div class="video-wrapper">
-      <iframe src="https://www.youtube.com/embed/r6IsGS_3d6g?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>
-    <div class="video-wrapper">
-      <iframe src="https://www.youtube.com/embed/Qd6NAgU2fAI?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-    </div>
-  </div>
+  <div id="video-container"></div>
 
-  <!-- Navigation Script -->
+  <!-- Script -->
   <script>
+    const sheetId = "1jciq3IYJ8MAye3Gdyuy0bbwcHMHLftKDiBrauzju-oY";
+    const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
     const container = document.getElementById("video-container");
     const prevButton = document.getElementById("prev-btn");
     const nextButton = document.getElementById("next-btn");
 
-    // Function to scroll to a specific video
+    // Function to fetch sheet data
+    async function fetchSheetData() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A1:A?key=${apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.values || [];
+    }
+
+    // Function to render videos
+    async function renderVideos() {
+      const videos = await fetchSheetData();
+      container.innerHTML = ""; // Clear previous content
+
+      videos.forEach((video, index) => {
+        if (video[0]) { // Ensure there's a URL
+          const iframe = document.createElement("iframe");
+          iframe.src = `https://www.youtube.com/embed/${getYouTubeId(video[0])}?autoplay=1&mute=1&controls=0&loop=1`;
+          iframe.allow = "autoplay; encrypted-media";
+          iframe.allowFullscreen = true;
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "video-wrapper";
+          wrapper.appendChild(iframe);
+
+          container.appendChild(wrapper);
+        }
+      });
+    }
+
+    // Utility function to extract YouTube video ID
+    function getYouTubeId(url) {
+      const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    }
+
+    // Navigation Buttons
     function scrollToVideo(index) {
       const videoHeight = window.innerHeight;
       container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
     }
 
-    // Determine the current video index
     function getCurrentIndex() {
       const scrollY = container.scrollTop;
       const videoHeight = window.innerHeight;
       return Math.round(scrollY / videoHeight);
     }
 
-    // Event listeners for buttons
     prevButton.addEventListener("click", () => {
       const currentIndex = getCurrentIndex();
       if (currentIndex > 0) {
@@ -138,6 +159,12 @@
         scrollToVideo(currentIndex + 1);
       }
     });
+
+    // Initial render
+    renderVideos();
+
+    // Periodic refresh
+    setInterval(renderVideos, 30000); // Check for updates every 30 seconds
   </script>
 </body>
 </html>
