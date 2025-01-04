@@ -164,12 +164,23 @@
       }
     });
 
-    // Mute/Unmute toggle
-    muteButton.addEventListener("click", () => {
-      isMuted = !isMuted;
-      muteButton.textContent = isMuted ? "🔈" : "🔊";
-      renderVideos(); // Re-render videos with updated mute status
-    });
+// Mute/Unmute toggle
+muteButton.addEventListener("click", () => {
+  isMuted = !isMuted;
+  muteButton.textContent = isMuted ? "🔈" : "🔊";
+  updateVideoSound();
+});
+
+// Function to update videos' mute status
+function updateVideoSound() {
+  const videos = document.querySelectorAll("#video-container iframe");
+  videos.forEach((iframe) => {
+    const currentSrc = iframe.src;
+    const newSrc = currentSrc.replace(/mute=(0|1)/, `mute=${isMuted ? "1" : "0"}`);
+    iframe.src = ""; // Temporarily unset src to force reload
+    iframe.src = newSrc;
+  });
+}
 
     // Initial render
     renderVideos();
