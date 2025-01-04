@@ -24,7 +24,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
+      padding: 0 10px; /* Add some inner spacing */
+      box-sizing: border-box;
       z-index: 1000;
     }
 
@@ -32,9 +33,10 @@
       background: #555;
       color: #fff;
       border: none;
-      padding: 10px 20px;
+      padding: 10px 40px; /* Wider buttons */
       cursor: pointer;
       border-radius: 5px;
+      font-size: 16px; /* Make the text more legible */
     }
 
     #navbar button:hover {
@@ -70,9 +72,9 @@
 <body>
   <!-- Navigation Bar -->
   <div id="navbar">
-    <button id="prev-btn">&lt;&lt;</button>
+    <button id="prev-btn">&lt;&lt; Previous</button>
     <span>Video Navigation</span>
-    <button id="next-btn">&gt;&gt;</button>
+    <button id="next-btn">Next &gt;&gt;</button>
   </div>
 
   <!-- Video Container -->
