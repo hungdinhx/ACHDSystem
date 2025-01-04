@@ -117,7 +117,7 @@
       videos.forEach((video) => {
         if (video[0]) { // Ensure there's a URL
           const iframe = document.createElement("iframe");
-          iframe.src = `https://www.youtube.com/embed/${getYouTubeId(video[0])}?autoplay=1&controls=0&loop=1&mute=${isMuted ? "1" : "0"}`;
+          iframe.src = `https://www.youtube.com/embed/${getYouTubeId(video[0])}?autoplay=1&controls=0&loop=1&mute=${isMuted ? "1" : "0"}&enablejsapi=1`;
           iframe.allow = "autoplay; encrypted-media";
           iframe.allowFullscreen = true;
 
@@ -137,21 +137,32 @@
       return match ? match[1] : null;
     }
 
-    // Scroll functions
+    // Pause all videos
+    function pauseAllVideos() {
+      const videos = document.querySelectorAll("#video-container iframe");
+      videos.forEach((iframe) => {
+        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      });
+    }
+
+    // Scroll to video
     function scrollToVideo(index) {
       const videoHeight = window.innerHeight;
       container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
     }
 
+    // Get current video index
     function getCurrentIndex() {
       const scrollY = container.scrollTop;
       const videoHeight = window.innerHeight;
       return Math.round(scrollY / videoHeight);
     }
 
+    // Button event listeners
     prevButton.addEventListener("click", () => {
       const currentIndex = getCurrentIndex();
       if (currentIndex > 0) {
+        pauseAllVideos();
         scrollToVideo(currentIndex - 1);
       }
     });
@@ -160,27 +171,41 @@
       const currentIndex = getCurrentIndex();
       const totalVideos = container.children.length;
       if (currentIndex < totalVideos - 1) {
+        pauseAllVideos();
         scrollToVideo(currentIndex + 1);
       }
     });
 
-// Mute/Unmute toggle
-muteButton.addEventListener("click", () => {
-  isMuted = !isMuted;
-  muteButton.textContent = isMuted ? "🔈" : "🔊";
-  updateVideoSound();
-});
+    // Mute/Unmute toggle
+    muteButton.addEventListener("click", () => {
+      isMuted = !isMuted;
+      muteButton.textContent = isMuted ? "🔈" : "🔊";
+      updateVideoSound();
+    });
 
-// Function to update videos' mute status
-function updateVideoSound() {
-  const videos = document.querySelectorAll("#video-container iframe");
-  videos.forEach((iframe) => {
-    const currentSrc = iframe.src;
-    const newSrc = currentSrc.replace(/mute=(0|1)/, `mute=${isMuted ? "1" : "0"}`);
-    iframe.src = ""; // Temporarily unset src to force reload
-    iframe.src = newSrc;
-  });
-}
+    // Update video sound settings
+    function updateVideoSound() {
+      const videos = document.querySelectorAll("#video-container iframe");
+      videos.forEach((iframe) => {
+        const currentSrc = iframe.src;
+        const newSrc = currentSrc.replace(/mute=(0|1)/, `mute=${isMuted ? "1" : "0"}`);
+        iframe.src = ""; // Temporarily unset src to force reload
+        iframe.src = newSrc;
+      });
+    }
+
+    // Scroll event to play/pause videos
+    container.addEventListener("scroll", () => {
+      const videos = document.querySelectorAll("#video-container iframe");
+      videos.forEach((iframe, index) => {
+        const rect = iframe.getBoundingClientRect();
+        if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+          iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        } else {
+          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        }
+      });
+    });
 
     // Initial render
     renderVideos();
