@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scrollable Video App</title>
+  <title>Scrollable Video App with Navigation</title>
   <style>
     body, html {
       margin: 0;
@@ -13,8 +13,37 @@
       font-family: Arial, sans-serif;
     }
 
+    #navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background: #333;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 1000;
+    }
+
+    #navbar button {
+      background: #555;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    #navbar button:hover {
+      background: #777;
+    }
+
     #video-container {
-      height: 100vh;
+      margin-top: 50px; /* Offset for the navbar */
+      height: calc(100vh - 50px);
       overflow-y: scroll;
       scroll-snap-type: y mandatory;
       -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
@@ -39,8 +68,15 @@
   </style>
 </head>
 <body>
+  <!-- Navigation Bar -->
+  <div id="navbar">
+    <button id="prev-btn">&lt;&lt;</button>
+    <span>Video Navigation</span>
+    <button id="next-btn">&gt;&gt;</button>
+  </div>
+
+  <!-- Video Container -->
   <div id="video-container">
-    <!-- Embed YouTube Videos Here -->
     <div class="video-wrapper">
       <iframe src="https://www.youtube.com/embed/SL_dDZzKtZg?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
@@ -50,24 +86,41 @@
     <div class="video-wrapper">
       <iframe src="https://www.youtube.com/embed/Qd6NAgU2fAI?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     </div>
-    <!-- Add more videos as needed -->
   </div>
 
-  <!-- Optional Smooth Scrolling Script -->
+  <!-- Navigation Script -->
   <script>
     const container = document.getElementById("video-container");
+    const prevButton = document.getElementById("prev-btn");
+    const nextButton = document.getElementById("next-btn");
 
-    // Add smooth scroll behavior for all major browsers
-    container.addEventListener("scroll", () => {
-      clearTimeout(container.scrollTimeout);
+    // Function to scroll to a specific video
+    function scrollToVideo(index) {
+      const videoHeight = window.innerHeight;
+      container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
+    }
 
-      container.scrollTimeout = setTimeout(() => {
-        const scrollY = container.scrollTop;
-        const videoHeight = window.innerHeight;
+    // Determine the current video index
+    function getCurrentIndex() {
+      const scrollY = container.scrollTop;
+      const videoHeight = window.innerHeight;
+      return Math.round(scrollY / videoHeight);
+    }
 
-        const index = Math.round(scrollY / videoHeight);
-        container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
-      }, 100);
+    // Event listeners for buttons
+    prevButton.addEventListener("click", () => {
+      const currentIndex = getCurrentIndex();
+      if (currentIndex > 0) {
+        scrollToVideo(currentIndex - 1);
+      }
+    });
+
+    nextButton.addEventListener("click", () => {
+      const currentIndex = getCurrentIndex();
+      const totalVideos = container.children.length;
+      if (currentIndex < totalVideos - 1) {
+        scrollToVideo(currentIndex + 1);
+      }
     });
   </script>
 </body>
