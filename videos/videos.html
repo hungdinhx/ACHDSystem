@@ -100,6 +100,14 @@
     const muteButton = document.getElementById("mute-btn");
 
     let isMuted = true;
+    let players = [];
+    let currentPlayerIndex = 0;
+
+    // Load YouTube Iframe API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     // Fetch data from Google Sheets
     async function fetchSheetData() {
@@ -109,25 +117,41 @@
       return data.values || [];
     }
 
-    // Render videos
+    // Initialize players
     async function renderVideos() {
       const videos = await fetchSheetData();
       container.innerHTML = ""; // Clear previous content
+      players = []; // Reset players
 
-      videos.forEach((video) => {
-        if (video[0]) { // Ensure there's a URL
-          const iframe = document.createElement("iframe");
-          iframe.src = `https://www.youtube.com/embed/${getYouTubeId(video[0])}?autoplay=1&controls=0&loop=1&mute=${isMuted ? "1" : "0"}&enablejsapi=1`;
-          iframe.allow = "autoplay; encrypted-media";
-          iframe.allowFullscreen = true;
-
+      videos.forEach((video, index) => {
+        if (video[0]) {
           const wrapper = document.createElement("div");
           wrapper.className = "video-wrapper";
+
+          const iframe = document.createElement("div");
+          iframe.id = `player-${index}`;
           wrapper.appendChild(iframe);
 
           container.appendChild(wrapper);
+
+          // Create YouTube player instance
+          players.push(new YT.Player(`player-${index}`, {
+            videoId: getYouTubeId(video[0]),
+            playerVars: {
+              autoplay: index === 0 ? 1 : 0,
+              mute: isMuted ? 1 : 0,
+              controls: 1,
+              rel: 0,
+            },
+          }));
         }
       });
+
+      // Start the first video
+      if (players.length > 0) {
+        currentPlayerIndex = 0;
+        playVideo(0);
+      }
     }
 
     // Utility function to extract YouTube video ID
@@ -137,81 +161,49 @@
       return match ? match[1] : null;
     }
 
-    // Pause all videos
-    function pauseAllVideos() {
-      const videos = document.querySelectorAll("#video-container iframe");
-      videos.forEach((iframe) => {
-        iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-      });
+    // Play video by index
+    function playVideo(index) {
+      if (players[currentPlayerIndex]) players[currentPlayerIndex].pauseVideo();
+      currentPlayerIndex = index;
+      if (players[currentPlayerIndex]) players[currentPlayerIndex].playVideo();
     }
 
     // Scroll to video
     function scrollToVideo(index) {
       const videoHeight = window.innerHeight;
       container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
-    }
-
-    // Get current video index
-    function getCurrentIndex() {
-      const scrollY = container.scrollTop;
-      const videoHeight = window.innerHeight;
-      return Math.round(scrollY / videoHeight);
+      playVideo(index);
     }
 
     // Button event listeners
     prevButton.addEventListener("click", () => {
-      const currentIndex = getCurrentIndex();
-      if (currentIndex > 0) {
-        pauseAllVideos();
-        scrollToVideo(currentIndex - 1);
+      if (currentPlayerIndex > 0) {
+        scrollToVideo(currentPlayerIndex - 1);
       }
     });
 
     nextButton.addEventListener("click", () => {
-      const currentIndex = getCurrentIndex();
-      const totalVideos = container.children.length;
-      if (currentIndex < totalVideos - 1) {
-        pauseAllVideos();
-        scrollToVideo(currentIndex + 1);
+      if (currentPlayerIndex < players.length - 1) {
+        scrollToVideo(currentPlayerIndex + 1);
       }
     });
 
-    // Mute/Unmute toggle
     muteButton.addEventListener("click", () => {
       isMuted = !isMuted;
       muteButton.textContent = isMuted ? "🔈" : "🔊";
-      updateVideoSound();
-    });
-
-    // Update video sound settings
-    function updateVideoSound() {
-      const videos = document.querySelectorAll("#video-container iframe");
-      videos.forEach((iframe) => {
-        const currentSrc = iframe.src;
-        const newSrc = currentSrc.replace(/mute=(0|1)/, `mute=${isMuted ? "1" : "0"}`);
-        iframe.src = ""; // Temporarily unset src to force reload
-        iframe.src = newSrc;
-      });
-    }
-
-    // Scroll event to play/pause videos
-    container.addEventListener("scroll", () => {
-      const videos = document.querySelectorAll("#video-container iframe");
-      videos.forEach((iframe, index) => {
-        const rect = iframe.getBoundingClientRect();
-        if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
-          iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      players.forEach(player => {
+        if (isMuted) {
+          player.mute();
         } else {
-          iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          player.unMute();
         }
       });
     });
 
-    // Initial render
-    renderVideos();
-
-    // Periodic refresh
-    setInterval(renderVideos, 30000); // Check for updates every 30 seconds
+    // Initialize videos on API ready
+    function onYouTubeIframeAPIReady() {
+      renderVideos();
+    }
   </script>
 </body>
 </html>
