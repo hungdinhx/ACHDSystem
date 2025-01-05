@@ -3,54 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fill-in-the-Blanks Game</title>
+  <title>Fill in the Blank Game</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f9f9f9;
+      background-color: #f8f9fa;
+      color: #333;
       margin: 0;
       padding: 0;
-    }
-
-    .game-container {
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
 
     h1 {
-      color: #333;
+      margin-top: 20px;
+      font-size: 1.5rem;
+      color: #007bff;
     }
 
-    .paragraph {
-      font-size: 18px;
+    .game-container {
+      width: 90%;
+      max-width: 500px;
       margin: 20px 0;
-      line-height: 2; /* Double spacing for readability */
-      text-align: left;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
-    .blank {
-      display: inline-block;
-      width: 120px;
-      height: 24px;
+    .sentence {
+      font-size: 1.2em;
+      margin: 20px 0;
+      line-height: 1.5;
+      text-align: center; /* Center the sentence horizontally */
+    }
+
+    .sentence .blank {
       border-bottom: 2px solid #333;
+      display: inline-block;
+      width: 100px;
       text-align: center;
-      font-size: 16px;
-      color: #555;
-      vertical-align: middle;
-      cursor: pointer;
     }
 
-    .marked {
-      color: #f44336;
-      font-weight: bold;
-    }
-
-    .vocabulary-buttons {
+    .choices {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
@@ -61,7 +63,7 @@
     button {
       padding: 10px 20px;
       font-size: 16px;
-      background-color: #4caf50;
+      background-color: #28a745;
       color: white;
       border: none;
       border-radius: 5px;
@@ -70,161 +72,215 @@
     }
 
     button:hover {
-      background-color: #45a049;
+      background-color: #218838;
     }
 
     button:disabled {
       background-color: #ccc;
+      color: #666;
       cursor: not-allowed;
     }
 
-    .controls {
-      margin-top: 20px;
+    .translation {
+      margin: 20px 0;
+      font-size: 1.1em;
+      font-weight: bold;
+      text-align: center;
     }
 
-    #feedback {
-      margin-top: 10px;
+    .correct {
+      color: #28a745;
+    }
+
+    .wrong {
+      color: #dc3545;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
       font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+
+    .next-btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .next-btn:hover {
+      background-color: #0056b3;
+    }
+
+    .next-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
     }
   </style>
 </head>
 <body>
-  <h1>Fill-in-the-Blanks Game</h1>
+  <h1>Fill in the Blank Game</h1>
+  <div>
+    <label for="lesson-select">Choose Lesson:</label>
+    <select id="lesson-select">
+      <option value="all">All Lessons</option>
+    </select>
+  </div>
   <div class="game-container">
-    <div id="paragraph" class="paragraph"></div>
-    <div class="vocabulary-buttons" id="vocabulary-buttons"></div>
-    <div class="controls">
-      <button id="check-answer">Check Answer</button>
-      <button id="next-round">Next Round</button>
-    </div>
-    <div id="feedback"></div>
+    <div id="sentence" class="sentence"></div>
+    <div id="choices" class="choices"></div>
+    <div id="message" class="translation"></div>
+    <button id="next-btn" class="next-btn" style="display: none;">Next</button>
   </div>
 
   <script>
-    const rounds = [
-      {
-        part: "To speak briefly of the five <span class='blank' data-answer='elements'></span>, they originate as a single flow of <span class='blank' data-answer='energy'></span>, following the <span class='blank' data-answer='principles'></span> of <span class='blank' data-answer='heaven'></span>, circulating harmoniously in an <span class='blank' data-answer='integrated'></span> and <span class='blank' data-answer='balanced'></span> manner.",
-        vocabulary: ["elements", "energy", "principles", "heaven", "integrated", "balanced"]
-      },
-      {
-        part: "Yet, common human <span class='blank' data-answer='dispositions'></span> tend to be skewed, leading the five elements toward <span class='blank' data-answer='yin'></span>. When this happens, the <span class='blank' data-answer='toxic energies'></span> of <span class='blank' data-answer='anger'></span>, <span class='blank' data-answer='hatred'></span>, <span class='blank' data-answer='resentment'></span>, <span class='blank' data-answer='frustration'></span>, and <span class='blank' data-answer='annoyance'></span> dominate.",
-        vocabulary: ["dispositions", "yin", "toxic energies", "anger", "hatred", "resentment", "frustration", "annoyance"]
-      },
-      {
-        part: "No wonder <span class='blank' data-answer='illness'></span> arises. From the perspective of the five elements, the East is associated with the <span class='blank' data-answer='wood'></span> element, governs the <span class='blank' data-answer='liver'></span>, which stores the <span class='blank' data-answer='soul'></span> and represents one’s original nature.",
-        vocabulary: ["illness", "wood", "liver", "soul"]
-      },
-      {
-        part: "Its innate quality is <span class='blank' data-answer='benevolence'></span>, which is the root of <span class='blank' data-answer='virtue'></span>. In the five elements, it corresponds to the role of a laborer, and in human relationships, it corresponds to the position of the eldest son.",
-        vocabulary: ["benevolence", "virtue"]
-      },
-      {
-        part: "The disposition of someone with a “yin wood” nature often inclines toward <span class='blank' data-answer='anger'></span>. Such individuals are stubborn, unyielding, and unwilling to admit fault.",
-        vocabulary: ["anger"]
+    const sheetId = "1WSTjH82ptRGORtNDeVEDio1oVa2GmKTrHw6mfR029BU";
+    const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+    const lessonSelect = document.getElementById("lesson-select");
+    const sentenceContainer = document.getElementById("sentence");
+    const choicesContainer = document.getElementById("choices");
+    const messageContainer = document.getElementById("message");
+    const nextButton = document.getElementById("next-btn");
+
+    let sentences = [];
+    let playedSentences = new Set();
+    let currentSentence = {};
+    let currentChoices = [];
+    let lessonFilter = "all";
+
+    async function fetchSentences() {
+      const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1?key=${apiKey}`;
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (!data.values) {
+          console.error("No data found in the sheet.");
+          return;
+        }
+
+        sentences = data.values.map(row => ({
+          sentence: row[0],
+          blanks: row[1] ? row[1].split(",") : [],
+          translation: row[2],
+          lesson: row[3]
+        }));
+
+        populateLessonOptions();
+        startGame();
+      } catch (error) {
+        console.error("Error fetching sentences:", error);
       }
-    ];
+    }
 
-    let currentRound = 0;
-    let filledAnswers = [];
+    function populateLessonOptions() {
+      const lessons = new Set(sentences.map(sentence => sentence.lesson));
+      lessons.forEach(lesson => {
+        if (lesson < 100) {
+          const option = document.createElement("option");
+          option.value = lesson;
+          option.textContent = `Lesson ${lesson}`;
+          lessonSelect.appendChild(option);
+        }
+      });
+    }
 
-    const paragraphContainer = document.getElementById("paragraph");
-    const vocabularyButtonsContainer = document.getElementById("vocabulary-buttons");
-    const feedback = document.getElementById("feedback");
+    function startGame() {
+      const filteredSentences = sentences.filter(sentence => 
+        (lessonFilter === "all" || sentence.lesson === lessonFilter) &&
+        !playedSentences.has(sentence.sentence)
+      );
+
+      if (filteredSentences.length > 0) {
+        currentSentence = filteredSentences[Math.floor(Math.random() * filteredSentences.length)];
+        playedSentences.add(currentSentence.sentence);
+        generateQuestion();
+      } else {
+        sentenceContainer.textContent = "No more sentences available for the selected lesson.";
+        choicesContainer.innerHTML = "";
+        messageContainer.textContent = "";
+        nextButton.style.display = "none";
+      }
+    }
+
+    function generateQuestion() {
+      const { sentence, blanks } = currentSentence;
+      const blank = blanks[Math.floor(Math.random() * blanks.length)];
+      const sentenceWithBlank = sentence.replace(
+        new RegExp(`\\b${blank}\\b`, "i"), 
+        `<span class="blank">&nbsp;</span>`
+      );
+      sentenceContainer.innerHTML = sentenceWithBlank;
+      generateChoices(blank);
+    }
+
+    function generateChoices(correctChoice) {
+      const otherChoices = sentences
+        .flatMap(sentence => sentence.blanks)
+        .filter(choice => choice.toLowerCase() !== correctChoice.toLowerCase());
+      
+      currentChoices = shuffleArray([
+        correctChoice,
+        ...otherChoices.slice(0, 3)
+      ]);
+
+      renderChoices(correctChoice);
+    }
+
+    function renderChoices(correctChoice) {
+      choicesContainer.innerHTML = "";
+      currentChoices.forEach(choice => {
+        const button = document.createElement("button");
+        button.textContent = choice;
+        button.onclick = () => checkAnswer(choice, correctChoice);
+        choicesContainer.appendChild(button);
+      });
+    }
+
+    function checkAnswer(choice, correctChoice) {
+      const blankElement = document.querySelector(".blank");
+      blankElement.textContent = choice;
+
+      if (choice.toLowerCase() === correctChoice.toLowerCase()) {
+        messageContainer.innerHTML = `Correct! Translation: ${currentSentence.translation}`;
+        messageContainer.className = "translation correct";
+        nextButton.style.display = "block";
+      } else {
+        messageContainer.textContent = "Wrong! Try again.";
+        messageContainer.className = "translation wrong";
+      }
+    }
 
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
       }
+      return array;
     }
 
-    function loadRound() {
-      const round = rounds[currentRound];
-      paragraphContainer.innerHTML = round.part;
-      filledAnswers = Array(document.querySelectorAll(".blank").length).fill(null);
+    lessonSelect.addEventListener("change", () => {
+      lessonFilter = lessonSelect.value;
+      playedSentences.clear();
+      startGame();
+    });
 
-      const shuffledVocabulary = [...round.vocabulary];
-      shuffleArray(shuffledVocabulary);
+    nextButton.addEventListener("click", () => {
+      messageContainer.textContent = "";
+      nextButton.style.display = "none";
+      startGame();
+    });
 
-      vocabularyButtonsContainer.innerHTML = "";
-      shuffledVocabulary.forEach((word, index) => {
-        const button = document.createElement("button");
-        button.textContent = word;
-        button.dataset.index = index;
-        button.onclick = () => fillBlank(word, button);
-        vocabularyButtonsContainer.appendChild(button);
-      });
-
-      feedback.textContent = "";
-    }
-
-    function fillBlank(word, button) {
-      const blanks = document.querySelectorAll(".blank");
-      const nextBlankIndex = filledAnswers.findIndex(answer => answer === null);
-      if (nextBlankIndex !== -1) {
-        blanks[nextBlankIndex].textContent = word;
-        blanks[nextBlankIndex].dataset.word = word;
-        blanks[nextBlankIndex].onclick = () => unclickBlank(nextBlankIndex, button);
-        filledAnswers[nextBlankIndex] = word;
-        button.disabled = true;
-      }
-    }
-
-    function unclickBlank(blankIndex, button) {
-      const blanks = document.querySelectorAll(".blank");
-      const blank = blanks[blankIndex];
-      const word = blank.dataset.word;
-      if (word) {
-        blank.textContent = "";
-        blank.dataset.word = "";
-        blank.onclick = null;
-        filledAnswers[blankIndex] = null;
-        button.disabled = false;
-      }
-    }
-
-    function checkAnswers() {
-      const blanks = document.querySelectorAll(".blank");
-      let allCorrect = true;
-
-      blanks.forEach((blank, index) => {
-        const correctAnswer = blank.getAttribute("data-answer");
-        const userAnswer = filledAnswers[index];
-
-        const possibleAnswers = correctAnswer.split(/,|and/).map(ans => ans.trim());
-        const isCorrect = possibleAnswers.includes(userAnswer);
-
-        if (!isCorrect) {
-          allCorrect = false;
-          blank.textContent = `*${userAnswer || "___"}*`;
-          blank.classList.add("marked");
-        } else {
-          blank.textContent = userAnswer;
-          blank.classList.remove("marked");
-        }
-      });
-
-      feedback.textContent = allCorrect
-        ? "🎉 All correct! Great job!"
-        : "❌ Some answers are incorrect. Try again!";
-      feedback.style.color = allCorrect ? "#4caf50" : "#f44336";
-    }
-
-    function nextRound() {
-      if (currentRound < rounds.length - 1) {
-        currentRound++;
-        loadRound();
-      } else {
-        feedback.textContent = "🎉 You've completed all rounds!";
-        feedback.style.color = "#4caf50";
-      }
-    }
-
-    document.getElementById("check-answer").onclick = checkAnswers;
-    document.getElementById("next-round").onclick = nextRound;
-
-    shuffleArray(rounds);  // Shuffle the rounds
-    loadRound();
+    fetchSentences();
   </script>
 </body>
 </html>
