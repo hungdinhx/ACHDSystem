@@ -84,6 +84,7 @@
   <div id="navbar">
     <button id="prev-btn">&lt;&lt;</button>
     <button id="mute-btn">🔈</button>
+    <button id="fullscreen-btn">⛶</button>
     <button id="next-btn">&gt;&gt;</button>
   </div>
 
@@ -98,6 +99,7 @@
     const prevButton = document.getElementById("prev-btn");
     const nextButton = document.getElementById("next-btn");
     const muteButton = document.getElementById("mute-btn");
+    const fullscreenButton = document.getElementById("fullscreen-btn");
 
     let isMuted = true;
     let players = [];
@@ -114,17 +116,27 @@
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A1:A?key=${apiKey}`;
       const response = await fetch(url);
       const data = await response.json();
-      return data.values || [];
+      const values = data.values || [];
+      return values.slice(1).map(row => row[0]); // Remove header and extract URLs
+    }
+
+    // Shuffle array
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
     }
 
     // Initialize players
     async function renderVideos() {
-      const videos = await fetchSheetData();
+      const videos = shuffle(await fetchSheetData());
       container.innerHTML = ""; // Clear previous content
       players = []; // Reset players
 
       videos.forEach((video, index) => {
-        if (video[0]) {
+        if (video) {
           const wrapper = document.createElement("div");
           wrapper.className = "video-wrapper";
 
@@ -136,7 +148,7 @@
 
           // Create YouTube player instance
           players.push(new YT.Player(`player-${index}`, {
-            videoId: getYouTubeId(video[0]),
+            videoId: getYouTubeId(video),
             playerVars: {
               autoplay: index === 0 ? 1 : 0,
               mute: isMuted ? 1 : 0,
@@ -174,6 +186,15 @@
       container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
       playVideo(index);
     }
+
+    // Fullscreen toggle
+    fullscreenButton.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
 
     // Button event listeners
     prevButton.addEventListener("click", () => {

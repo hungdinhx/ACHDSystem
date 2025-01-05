@@ -48,7 +48,7 @@
             background-color: #fff;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            margin: 20px 0;
         }
         #updates h2 {
             margin-bottom: 10px;
@@ -65,10 +65,6 @@
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        #updates .date {
-            font-weight: bold;
-            color: #333;
-        }
         @media (max-width: 600px) {
             .button {
                 font-size: 16px;
@@ -78,13 +74,6 @@
     </style>
 </head>
 <body>
-    <div id="updates">
-        <h2>Latest Updates</h2>
-        <ul id="update-list">
-            <!-- Updates will be appended here -->
-        </ul>
-    </div>
-
     <header>
         <h1>English Learning Journey</h1>
         <p>Your gateway to mastering English!</p>
@@ -96,6 +85,13 @@
         <a href="word-jumble/word-jumble.html" class="button" aria-label="Play Word Jumble">Word Jumble</a>
         <a href="videos/videos.html" class="button" aria-label="Videos">Videos</a>
     </nav>
+
+    <div id="updates">
+        <h2>Latest Updates</h2>
+        <ul id="update-list">
+            <!-- Updates will be appended here -->
+        </ul>
+    </div>
 
     <footer>
         <p>© 2024 English Learning Journey. All rights reserved.</p>
@@ -115,11 +111,8 @@
                 
                 // Skip the header row and loop through the updates
                 updates.slice(1).forEach(update => {
-                    const date = update[0]; // Date from column A
-                    const details = update[1]; // Details from column B
-                    
                     const listItem = document.createElement('li');
-                    listItem.innerHTML = `<span class="date">${date}</span>: ${details}`; // Format date and details
+                    listItem.textContent = update[0]; // Assuming column A contains the update text
                     updateList.appendChild(listItem);
                 });
             })
