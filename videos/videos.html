@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Video Reel</title>
+  <title>Mobile-First Video App</title>
   <style>
     body, html {
       margin: 0;
       padding: 0;
-      height: 100%;
-      overflow: auto;
       font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
     }
 
     #navbar {
@@ -18,98 +17,103 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: 60px;
-      background: linear-gradient(90deg, #4a90e2, #003366);
+      height: 50px;
+      background: #282828;
       color: #fff;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
+      justify-content: center;
+      padding: 0 10px;
       z-index: 1000;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-      box-sizing: border-box;
-    }
-
-    #navbar button {
-      background: #0066cc;
-      color: #fff;
-      border: none;
-      height: 40px;
-      width: 60px;
-      cursor: pointer;
-      border-radius: 5px;
       font-size: 18px;
-      font-weight: bold;
-      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-      transition: transform 0.2s, background 0.3s ease;
     }
 
-    #navbar button:hover {
-      background: #004a99;
-      transform: scale(1.1);
-    }
-
-    #navbar button:active {
-      transform: scale(0.95);
-    }
-
-    #video-container {
-      margin-top: 60px;
-      height: calc(100vh - 60px);
-      overflow-y: scroll;
-      scroll-snap-type: y mandatory;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .video-wrapper {
-      height: 100vh;
-      scroll-snap-align: start;
+    #player-container {
+      margin-top: 50px;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #000;
+      background-color: #000;
+      width: 100%;
+      height: 200px;
     }
 
-    iframe {
+    #video-player {
       width: 100%;
       height: 100%;
-      max-width: 100%;
-      max-height: 100%;
       border: none;
+    }
+
+    #video-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px;
+      justify-content: space-between;
+    }
+
+    .video-thumbnail {
+      width: calc(50% - 10px); /* Two thumbnails per row */
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .video-thumbnail img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .video-thumbnail:hover {
+      transform: scale(1.05);
+    }
+
+    .video-title {
+      font-size: 14px;
+      margin: 4px 0 0;
+      color: #333;
+      text-align: center;
+    }
+
+    /* Larger screens (tablet/desktop) */
+    @media (min-width: 768px) {
+      #navbar {
+        height: 60px;
+        font-size: 24px;
+      }
+
+      #player-container {
+        height: 360px;
+      }
+
+      .video-thumbnail {
+        width: calc(25% - 15px); /* Four thumbnails per row */
+      }
+
+      .video-title {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
 <body>
   <!-- Navigation Bar -->
   <div id="navbar">
-    <button id="prev-btn">&lt;&lt;</button>
-    <button id="mute-btn">🔈</button>
-    <button id="fullscreen-btn">⛶</button>
-    <button id="next-btn">&gt;&gt;</button>
+    Video Browser
   </div>
 
-  <!-- Video Container -->
-  <div id="video-container"></div>
+  <!-- Video Player -->
+  <div id="player-container">
+    <iframe id="video-player" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
+  </div>
 
-  <!-- Script -->
+  <!-- Video Thumbnails -->
+  <div id="video-list"></div>
+
   <script>
     const sheetId = "1jciq3IYJ8MAye3Gdyuy0bbwcHMHLftKDiBrauzju-oY";
     const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
-    const container = document.getElementById("video-container");
-    const prevButton = document.getElementById("prev-btn");
-    const nextButton = document.getElementById("next-btn");
-    const muteButton = document.getElementById("mute-btn");
-    const fullscreenButton = document.getElementById("fullscreen-btn");
-
-    let isMuted = true;
-    let players = [];
-    let currentPlayerIndex = 0;
-
-    // Load YouTube Iframe API
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    const player = document.getElementById("video-player");
+    const videoList = document.getElementById("video-list");
 
     // Fetch data from Google Sheets
     async function fetchSheetData() {
@@ -120,52 +124,6 @@
       return values.slice(1).map(row => row[0]); // Remove header and extract URLs
     }
 
-    // Shuffle array
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    // Initialize players
-    async function renderVideos() {
-      const videos = shuffle(await fetchSheetData());
-      container.innerHTML = ""; // Clear previous content
-      players = []; // Reset players
-
-      videos.forEach((video, index) => {
-        if (video) {
-          const wrapper = document.createElement("div");
-          wrapper.className = "video-wrapper";
-
-          const iframe = document.createElement("div");
-          iframe.id = `player-${index}`;
-          wrapper.appendChild(iframe);
-
-          container.appendChild(wrapper);
-
-          // Create YouTube player instance
-          players.push(new YT.Player(`player-${index}`, {
-            videoId: getYouTubeId(video),
-            playerVars: {
-              autoplay: index === 0 ? 1 : 0,
-              mute: isMuted ? 1 : 0,
-              controls: 1,
-              rel: 0,
-            },
-          }));
-        }
-      });
-
-      // Start the first video
-      if (players.length > 0) {
-        currentPlayerIndex = 0;
-        playVideo(0);
-      }
-    }
-
     // Utility function to extract YouTube video ID
     function getYouTubeId(url) {
       const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -173,58 +131,45 @@
       return match ? match[1] : null;
     }
 
-    // Play video by index
-    function playVideo(index) {
-      if (players[currentPlayerIndex]) players[currentPlayerIndex].pauseVideo();
-      currentPlayerIndex = index;
-      if (players[currentPlayerIndex]) players[currentPlayerIndex].playVideo();
-    }
+    // Load videos into the grid
+    async function loadVideos() {
+      const videos = await fetchSheetData();
+      videoList.innerHTML = ""; // Clear existing content
 
-    // Scroll to video
-    function scrollToVideo(index) {
-      const videoHeight = window.innerHeight;
-      container.scrollTo({ top: index * videoHeight, behavior: "smooth" });
-      playVideo(index);
-    }
+      videos.forEach(videoUrl => {
+        const videoId = getYouTubeId(videoUrl);
 
-    // Fullscreen toggle
-    fullscreenButton.addEventListener("click", () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
-      }
-    });
+        if (videoId) {
+          // Create thumbnail element
+          const thumbnail = document.createElement("div");
+          thumbnail.className = "video-thumbnail";
+          thumbnail.innerHTML = `
+            <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="Thumbnail">
+            <p class="video-title">Video ID: ${videoId}</p>
+          `;
 
-    // Button event listeners
-    prevButton.addEventListener("click", () => {
-      if (currentPlayerIndex > 0) {
-        scrollToVideo(currentPlayerIndex - 1);
-      }
-    });
+          // Add click event to play video
+          thumbnail.addEventListener("click", () => {
+            playVideo(videoId);
+          });
 
-    nextButton.addEventListener("click", () => {
-      if (currentPlayerIndex < players.length - 1) {
-        scrollToVideo(currentPlayerIndex + 1);
-      }
-    });
-
-    muteButton.addEventListener("click", () => {
-      isMuted = !isMuted;
-      muteButton.textContent = isMuted ? "🔈" : "🔊";
-      players.forEach(player => {
-        if (isMuted) {
-          player.mute();
-        } else {
-          player.unMute();
+          videoList.appendChild(thumbnail);
         }
       });
-    });
 
-    // Initialize videos on API ready
-    function onYouTubeIframeAPIReady() {
-      renderVideos();
+      // Autoplay the first video
+      if (videos.length > 0) {
+        playVideo(getYouTubeId(videos[0]));
+      }
     }
+
+    // Play video in the player
+    function playVideo(videoId) {
+      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    }
+
+    // Load videos on page load
+    loadVideos();
   </script>
 </body>
 </html>
