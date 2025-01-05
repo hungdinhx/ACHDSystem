@@ -117,11 +117,11 @@
 
     // Fetch data from Google Sheets
     async function fetchSheetData() {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A1:A?key=${apiKey}`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A1:B?key=${apiKey}`;
       const response = await fetch(url);
       const data = await response.json();
       const values = data.values || [];
-      return values.slice(1).map(row => row[0]); // Remove header and extract URLs
+      return values.slice(1); // Remove header row and return video data
     }
 
     // Utility function to extract YouTube video ID
@@ -136,7 +136,9 @@
       const videos = await fetchSheetData();
       videoList.innerHTML = ""; // Clear existing content
 
-      videos.forEach(videoUrl => {
+      videos.forEach(video => {
+        const videoUrl = video[0]; // Column A (YouTube URL)
+        const videoName = video[1]; // Column B (Video Name)
         const videoId = getYouTubeId(videoUrl);
 
         if (videoId) {
@@ -145,7 +147,7 @@
           thumbnail.className = "video-thumbnail";
           thumbnail.innerHTML = `
             <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="Thumbnail">
-            <p class="video-title">Video ID: ${videoId}</p>
+            <p class="video-title">${videoName}</p>
           `;
 
           // Add click event to play video
@@ -159,7 +161,8 @@
 
       // Autoplay the first video
       if (videos.length > 0) {
-        playVideo(getYouTubeId(videos[0]));
+        const firstVideo = getYouTubeId(videos[0][0]);
+        playVideo(firstVideo);
       }
     }
 
