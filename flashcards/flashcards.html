@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcard App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+      margin: 0;
+      padding: 0;
+    }
+
+    #flashcard-container {
+      perspective: 1000px;
+      width: 90%;
+      max-width: 350px;
+      margin: 30px auto;
+    }
+
+    #flashcard {
+      width: 100%;
+      height: 250px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateY(0);
+      transition: transform 0.6s;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    #flashcard .side {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      font-size: 16px;
+      color: #fff;
+      box-sizing: border-box;
+    }
+
+    #flashcard .front {
+      background: linear-gradient(135deg, #ff7f50, #ff4500);
+    }
+
+    #flashcard .back {
+      background: linear-gradient(135deg, #4caf50, #008cba);
+      transform: rotateY(180deg);
+    }
+
+    #controls {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    #controls button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease;
+    }
+
+    #controls button:hover {
+      background-color: #45a049;
+    }
+
+    #controls button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div id="flashcard-container">
+    <div id="flashcard">
+      <div class="side front" id="question">Loading...</div>
+      <div class="side back" id="answer"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="prev-btn" disabled>Previous</button>
+    <button id="next-btn" disabled>Next</button>
+    <button id="toggle-reverse-btn">Reverse Mode: Off</button>
+  </div>
+
+  <script>
+    const sheetId = "11ls6bliqTqBglK0jiD6vWd2DLLixw9hhATg62HNqrP8";
+    const apiKey = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+    const flashcard = document.getElementById("flashcard");
+    const questionElement = document.getElementById("question");
+    const answerElement = document.getElementById("answer");
+    const prevButton = document.getElementById("prev-btn");
+    const nextButton = document.getElementById("next-btn");
+    const toggleReverseButton = document.getElementById("toggle-reverse-btn");
+
+    let flashcards = [];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let isReverseMode = false; // Tracks whether reverse mode is active
+
+    // Fetch data from Google Sheets
+    async function fetchFlashcards() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A1:B?key=${apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      const values = data.values || [];
+      return values.slice(1); // Exclude header row
+    }
+
+    // Initialize flashcards
+    async function init() {
+      flashcards = await fetchFlashcards();
+      if (flashcards.length > 0) {
+        currentIndex = 0;
+        updateFlashcard();
+        prevButton.disabled = false;
+        nextButton.disabled = false;
+      } else {
+        questionElement.textContent = "No flashcards available.";
+      }
+    }
+
+    // Update flashcard display
+    function updateFlashcard() {
+      const [question, answer] = flashcards[currentIndex];
+      if (isReverseMode) {
+        // Show the answer on the front and question on the back
+        questionElement.textContent = answer;
+        answerElement.textContent = question;
+      } else {
+        // Normal mode: Show the question on the front and answer on the back
+        questionElement.textContent = question;
+        answerElement.textContent = answer;
+      }
+
+      if (isFlipped) flipCard(); // Ensure the card is reset to the front
+
+      prevButton.disabled = currentIndex === 0;
+      nextButton.disabled = currentIndex === flashcards.length - 1;
+    }
+
+    // Flip card
+    function flipCard() {
+      isFlipped = !isFlipped;
+      flashcard.style.transform = isFlipped ? "rotateY(180deg)" : "rotateY(0)";
+    }
+
+    // Toggle reverse mode
+    function toggleReverseMode() {
+      isReverseMode = !isReverseMode;
+      toggleReverseButton.textContent = `Reverse Mode: ${isReverseMode ? "On" : "Off"}`;
+      updateFlashcard();
+    }
+
+    // Navigate flashcards
+    prevButton.addEventListener("click", () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateFlashcard();
+      }
+    });
+
+    nextButton.addEventListener("click", () => {
+      if (currentIndex < flashcards.length - 1) {
+        currentIndex++;
+        updateFlashcard();
+      }
+    });
+
+    // Add flip event
+    flashcard.addEventListener("click", flipCard);
+
+    // Add toggle reverse mode event
+    toggleReverseButton.addEventListener("click", toggleReverseMode);
+
+    // Initialize the app
+    init();
+  </script>
+</body>
+</html>
