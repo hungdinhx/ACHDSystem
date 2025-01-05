@@ -44,6 +44,31 @@
             width: 100%;
             margin-top: 20px;
         }
+        #updates {
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        #updates h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        #updates ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #updates li {
+            background-color: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #updates .date {
+            font-weight: bold;
+            color: #333;
+        }
         @media (max-width: 600px) {
             .button {
                 font-size: 16px;
@@ -53,6 +78,13 @@
     </style>
 </head>
 <body>
+    <div id="updates">
+        <h2>Latest Updates</h2>
+        <ul id="update-list">
+            <!-- Updates will be appended here -->
+        </ul>
+    </div>
+
     <header>
         <h1>English Learning Journey</h1>
         <p>Your gateway to mastering English!</p>
@@ -68,5 +100,30 @@
     <footer>
         <p>© 2024 English Learning Journey. All rights reserved.</p>
     </footer>
+
+    <script>
+        const sheetID = '1yjz4RZ7YM7ehNKj7Ae5Ob54oW798W56sqcAPJyxh9vc';
+        const apiKey = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/Sheet1?key=${apiKey}`;
+
+        // Fetch latest updates from Google Sheets
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const updates = data.values;
+                const updateList = document.getElementById('update-list');
+                
+                // Skip the header row and loop through the updates
+                updates.slice(1).forEach(update => {
+                    const date = update[0]; // Date from column A
+                    const details = update[1]; // Details from column B
+                    
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<span class="date">${date}</span>: ${details}`; // Format date and details
+                    updateList.appendChild(listItem);
+                });
+            })
+            .catch(error => console.error('Error fetching data from Google Sheets:', error));
+    </script>
 </body>
 </html>
