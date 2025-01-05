@@ -8,7 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background-color: #f0f8ff;
+      background-color: #f9f3e4; /* Soft pastel background color */
       margin: 0;
       padding: 0;
     }
@@ -19,11 +19,11 @@
 
     #deck-selector {
       padding: 10px;
-      border: 2px solid #007BFF;
+      border: 2px solid #FF6347; /* Warm tone border */
       border-radius: 5px;
       font-size: 16px;
-      background-color: #f0f8ff;
-      color: #007BFF;
+      background-color: #fff;
+      color: #FF6347; /* Warm tone text */
       cursor: pointer;
     }
 
@@ -63,11 +63,11 @@
     }
 
     #flashcard .front {
-      background: linear-gradient(135deg, #ff7f50, #ff4500);
+      background: linear-gradient(135deg, #ff7f50, #ff4500); /* Flashcard front gradient */
     }
 
     #flashcard .back {
-      background: linear-gradient(135deg, #4caf50, #008cba);
+      background: linear-gradient(135deg, #4caf50, #008cba); /* Flashcard back gradient */
       transform: rotateY(180deg);
     }
 
@@ -79,8 +79,21 @@
       gap: 15px;
     }
 
+    #card-counter {
+      font-size: 18px;
+      margin-top: 10px;
+      color: #333; /* Text color for Cards Left */
+    }
+
+    #control-buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 350px;
+    }
+
     #controls button {
-      background-color: #4CAF50;
+      background-color: #FF6347; /* Warm button color */
       color: white;
       border: none;
       padding: 10px 20px;
@@ -91,7 +104,7 @@
     }
 
     #controls button:hover {
-      background-color: #45a049;
+      background-color: #FF4500; /* Slightly darker hover effect */
     }
 
     #controls button:disabled {
@@ -99,10 +112,14 @@
       cursor: not-allowed;
     }
 
-    #card-counter {
-      font-size: 18px;
-      margin-top: 10px;
+    #toggle-reverse-btn {
+      background-color: #4CAF50; /* Reverse mode button color */
     }
+
+    #toggle-reverse-btn:hover {
+      background-color: #45a049;
+    }
+
   </style>
 </head>
 <body>
@@ -113,6 +130,8 @@
     </select>
   </div>
 
+  <div id="card-counter">Cards Left: 0</div> <!-- Cards Left moved here -->
+
   <div id="flashcard-container">
     <div id="flashcard">
       <div class="side front" id="question">Loading...</div>
@@ -121,9 +140,10 @@
   </div>
 
   <div id="controls">
-    <div id="card-counter">Cards Left: 0</div>
-    <button id="prev-btn" disabled>Previous</button>
-    <button id="next-btn" disabled>Next</button>
+    <div id="control-buttons">
+      <button id="prev-btn" disabled>Previous</button>
+      <button id="next-btn" disabled>Next</button>
+    </div>
     <button id="toggle-reverse-btn">Reverse Mode: Off</button>
   </div>
 
