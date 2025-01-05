@@ -111,8 +111,11 @@
                 
                 // Skip the header row and loop through the updates
                 updates.slice(1).forEach(update => {
+                    const date = update[0]; // Date from column A
+                    const details = update[1]; // Details from column B
+                    
                     const listItem = document.createElement('li');
-                    listItem.textContent = update[0]; // Assuming column A contains the update text
+                    listItem.innerHTML = `<strong>${date}</strong>: ${details}`; // Format date and details
                     updateList.appendChild(listItem);
                 });
             })
