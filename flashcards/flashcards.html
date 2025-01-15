@@ -8,7 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background-color: #f9f3e4; /* Soft pastel background color */
+      background-color: #f9f3e4;
       margin: 0;
       padding: 0;
     }
@@ -19,11 +19,11 @@
 
     #deck-selector {
       padding: 10px;
-      border: 2px solid #FF6347; /* Warm tone border */
+      border: 2px solid #FF6347;
       border-radius: 5px;
       font-size: 16px;
       background-color: #fff;
-      color: #FF6347; /* Warm tone text */
+      color: #FF6347;
       cursor: pointer;
     }
 
@@ -63,11 +63,11 @@
     }
 
     #flashcard .front {
-      background: linear-gradient(135deg, #ff7f50, #ff4500); /* Flashcard front gradient */
+      background: linear-gradient(135deg, #ff7f50, #ff4500);
     }
 
     #flashcard .back {
-      background: linear-gradient(135deg, #4caf50, #008cba); /* Flashcard back gradient */
+      background: linear-gradient(135deg, #4caf50, #008cba);
       transform: rotateY(180deg);
     }
 
@@ -82,7 +82,7 @@
     #card-counter {
       font-size: 18px;
       margin-top: 10px;
-      color: #333; /* Text color for Cards Left */
+      color: #333;
     }
 
     #control-buttons {
@@ -93,7 +93,7 @@
     }
 
     #controls button {
-      background-color: #FF6347; /* Warm button color */
+      background-color: #FF6347;
       color: white;
       border: none;
       padding: 10px 20px;
@@ -104,7 +104,7 @@
     }
 
     #controls button:hover {
-      background-color: #FF4500; /* Slightly darker hover effect */
+      background-color: #FF4500;
     }
 
     #controls button:disabled {
@@ -113,7 +113,7 @@
     }
 
     #toggle-reverse-btn {
-      background-color: #4CAF50; /* Reverse mode button color */
+      background-color: #4CAF50;
     }
 
     #toggle-reverse-btn:hover {
@@ -130,7 +130,7 @@
     </select>
   </div>
 
-  <div id="card-counter">Cards Left: 0</div> <!-- Cards Left moved here -->
+  <div id="card-counter">Cards Left: 0</div>
 
   <div id="flashcard-container">
     <div id="flashcard">
@@ -251,6 +251,8 @@
       const selectedDeck = deckSelector.value;
       filterFlashcards(selectedDeck);
     });
+
+    toggleReverseButton.addEventListener("click", toggleReverseMode);
 
     flashcard.addEventListener("click", flipCard);
 
