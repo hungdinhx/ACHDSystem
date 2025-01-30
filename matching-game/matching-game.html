@@ -133,9 +133,33 @@ const lessonSelect = document.getElementById('lesson-select');
 
 function speakText(text, lang) {
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
+  let availableVoices = speechSynthesis.getVoices();
+
+  if (lang === 'zh-CN') {
+    let chineseVoice = availableVoices.find(voice => 
+      voice.lang.startsWith('zh') || voice.name.includes('Chinese')
+    );
+    if (chineseVoice) {
+      utterance.voice = chineseVoice;
+    } else {
+      console.warn("Chinese voice not available on this device.");
+    }
+  } else {
+    let englishVoice = availableVoices.find(voice => 
+      voice.lang.startsWith('en') 
+    );
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+  }
+
   speechSynthesis.speak(utterance);
 }
+
+// Ensure voices load properly on iOS
+speechSynthesis.onvoiceschanged = () => {
+  console.log("Voices loaded:", speechSynthesis.getVoices());
+};
 
 function createButton(word, type) {
   const button = document.createElement('button');
