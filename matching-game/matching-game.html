@@ -19,9 +19,9 @@
       justify-content: center;
       align-items: center;
       height: 100%;
-      min-height: 100vh; /* Ensures the body takes full screen height */
+      min-height: 100vh;
       padding: 20px;
-      overflow-y: auto; /* Allows scrolling if content overflows */
+      overflow-y: auto;
     }
 
     h1 {
@@ -45,8 +45,8 @@
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       text-align: center;
-      height: auto; /* Allows container to grow with content */
-      margin-bottom: 20px; /* Space at the bottom to prevent cutoff */
+      height: auto;
+      margin-bottom: 20px;
     }
 
     .game-board {
@@ -75,12 +75,6 @@
     button.selected {
       background-color: #ff5722;
       color: #fff;
-    }
-
-    button.matched {
-      background-color: #4caf50;
-      color: #fff;
-      pointer-events: none;
     }
 
     #reset-button {
@@ -124,28 +118,23 @@
   </div>
 
   <script>
-    // Google Sheets API variables
-    const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s'; // Replace with your actual Google Sheets ID
-    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ'; // Replace with your actual API key
+    const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s';
+    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
     const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
 
     let vocabulary = [];
     let selectedButton = null;
     let matchedPairs = 0;
-    let startTime, timerInterval;
 
     const gameBoard = document.getElementById('game-board');
     const resetButton = document.getElementById('reset-button');
-    const timerDisplay = document.getElementById('timer');
     const winnerMessage = document.getElementById('winner-message');
     const lessonSelect = document.getElementById('lesson-select');
 
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
+    function speakText(text, lang) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      speechSynthesis.speak(utterance);
     }
 
     function createButton(word, type) {
@@ -153,7 +142,10 @@
       button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
       button.setAttribute('data-id', word.id);
       button.textContent = type === 'english' ? word.english : word.chinese;
-      button.onclick = () => buttonClicked(button, word, type);
+      button.onclick = () => {
+        speakText(button.textContent, type === 'english' ? 'en-US' : 'zh-CN');
+        buttonClicked(button, word, type);
+      };
       return button;
     }
 
@@ -161,9 +153,9 @@
       matchedPairs = 0;
       gameBoard.innerHTML = '';
       selectedButton = null;
+      winnerMessage.style.display = 'none';
 
-      const selectedWords = getRandomWords(lesson);
-
+      const selectedWords = vocabulary.slice(0, 10);
       const allButtons = [];
 
       selectedWords.forEach(word => {
@@ -171,11 +163,8 @@
         allButtons.push(createButton(word, 'chinese'));
       });
 
-      const shuffledButtons = shuffleArray(allButtons);
-      shuffledButtons.forEach(button => gameBoard.appendChild(button));
-
-      startTime = Date.now();
-      timerInterval = setInterval(updateTimer, 100);
+      allButtons.sort(() => Math.random() - 0.5);
+      allButtons.forEach(button => gameBoard.appendChild(button));
     }
 
     function buttonClicked(button, word, type) {
@@ -189,14 +178,15 @@
 
       if (selectedButton.word.id === word.id && selectedButton.type !== type) {
         matchedPairs++;
-        selectedButton.button.classList.add('matched');
-        button.classList.add('matched');
-        selectedButton = null;
+        setTimeout(() => {
+          selectedButton.button.remove();
+          button.remove();
+          selectedButton = null;
 
-        if (matchedPairs === Math.floor(gameBoard.children.length / 2)) {
-          clearInterval(timerInterval);
-          showWinnerMessage();
-        }
+          if (matchedPairs === Math.floor(gameBoard.children.length / 2)) {
+            winnerMessage.style.display = 'block';
+          }
+        }, 300);
       } else {
         setTimeout(() => {
           selectedButton.button.classList.remove('selected');
@@ -206,25 +196,6 @@
       }
     }
 
-    function updateTimer() {
-      const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-      const minutes = Math.floor(elapsedTime / 60);
-      const seconds = elapsedTime % 60;
-      timerDisplay.textContent = `Time: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    }
-
-    function showWinnerMessage() {
-      winnerMessage.style.display = 'block';
-    }
-
-    function getRandomWords(lesson) {
-      if (lesson === 'all') {
-        return shuffleArray(vocabulary).slice(0, 10);
-      }
-      return vocabulary.filter(word => word.lesson === lesson).slice(0, 10);
-    }
-
-    // Fetch vocabulary data from Google Sheets API
     async function fetchVocabulary() {
       const response = await fetch(SHEET_URL);
       const data = await response.json();
@@ -234,29 +205,13 @@
         chinese: row[1],
         lesson: row[2],
       }));
-
-      const lessons = [...new Set(vocabulary.map(word => word.lesson))];
-      lessons.forEach(lesson => {
-        const option = document.createElement('option');
-        option.value = lesson;
-        option.textContent = `Lesson ${lesson}`;
-        lessonSelect.appendChild(option);
-      });
-
       startGame(lessonSelect.value);
     }
 
-    resetButton.addEventListener('click', () => {
-      startGame(lessonSelect.value);
-    });
+    resetButton.addEventListener('click', () => startGame(lessonSelect.value));
+    lessonSelect.addEventListener('change', () => startGame(lessonSelect.value));
 
-    lessonSelect.addEventListener('change', () => {
-      startGame(lessonSelect.value);
-    });
-
-    // Fetch vocabulary and start game
     fetchVocabulary();
   </script>
-
 </body>
 </html>
