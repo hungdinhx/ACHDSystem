@@ -46,18 +46,21 @@
       margin-top: 20px;
     }
     .article-container {
-      width: 100%;
-      max-width: 800px;
-      background-color: white;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      margin-top: 20px;
-      text-align: center;
-      font-size: 24px;
-      line-height: 1.1;
-      color: #37474f;
-    }
+  width: 100%;
+  max-width: 800px;
+  background-color: white;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-top: 20px;
+  text-align: center;
+  font-size: 24px;
+  line-height: 1.1;
+  color: #37474f;
+  max-height: 400px; /* Adjust this value for how much content you want to show at once */
+  overflow-y: auto; /* Enables scrolling when content exceeds the max height */
+  padding-bottom: 60px; /* Added bottom padding to avoid overlap with translation bar */
+}
     .navigation-buttons button {
       margin: 5px;
       padding: 10px;
