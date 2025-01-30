@@ -147,20 +147,26 @@
       const titleBar = document.getElementById('article-title');
       if (articles.length > 0 && currentIndex >= 0 && currentIndex < articles.length) {
         titleBar.textContent = articles[currentIndex].title || "Article Viewer";
-        const words = articles[currentIndex].text.split(" ").map(word => `<span class='word' onclick='translateWord(this, "${word}")'>${word}</span>`).join(" ");
+        const words = articles[currentIndex].text.split(" ").map(word => `<span class='word' onclick='translateAndPronounceWord(this, "${word}")'>${word}</span>`).join(" ");
         articleContainer.innerHTML = words;
       }
     }
 
-    async function translateWord(element, word) {
+    async function translateAndPronounceWord(element, word) {
       if (lastClickedWord) {
         lastClickedWord.classList.remove("active");
       }
       element.classList.add("active");
       lastClickedWord = element;
       
+      // Pronounce the word
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = "en-US";
+      speechSynthesis.speak(utterance);
+
       document.getElementById("translation-bar").textContent = `Translating: ${word}`;
 
+      // Fetch translation from DeepL API
       const endpoint = `https://api-free.deepl.com/v2/translate?auth_key=${DEEPL_API_KEY}&text=${word}&source_lang=EN&target_lang=ZH`;
       try {
         const response = await fetch(endpoint);
