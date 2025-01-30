@@ -33,10 +33,14 @@
       max-width: 800px;
       background-color: #ffeb3b;
       padding: 10px;
-      margin-top: 10px;
       text-align: center;
       font-size: 18px;
       border-radius: 5px;
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
     }
     .dropdown-container, .navigation-buttons {
       margin-top: 20px;
@@ -45,13 +49,13 @@
       width: 100%;
       max-width: 800px;
       background-color: white;
-      padding: 20px;
+      padding: 10px;
       border-radius: 5px;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
       margin-top: 20px;
       text-align: center;
-      font-size: 32px;
-      line-height: 1.6;
+      font-size: 24px;
+      line-height: 1.1;
       color: #37474f;
     }
     .navigation-buttons button {
@@ -97,8 +101,6 @@
     const SHEET_ID = '1QsT4ygsGvmsj4b2JGzf_n-S2WhBMMbPdyyYbdZ9qDm4';
     const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
     const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
-    const TRANSLATION_API = "https://api.mymemory.translated.net/get?q=";
-
     let articles = [];
     let currentIndex = 0;
     let lastClickedWord = null;
@@ -112,6 +114,7 @@
           articles = data.values.slice(1).map(row => ({ id: row[0], text: row[1], title: row[2] }));
           document.getElementById('article-title').textContent = articles[0].title || "Article Viewer";
           populateDropdown(articles);
+          updateArticle();
         } else {
           document.getElementById('article-dropdown').innerHTML = '<option value="">No paragraphs found</option>';
         }
@@ -145,33 +148,35 @@
         titleBar.textContent = articles[currentIndex].title || "Article Viewer";
         const words = articles[currentIndex].text.split(" ").map(word => `<span class='word' onclick='translateWord(this, "${word}")'>${word}</span>`).join(" ");
         articleContainer.innerHTML = words;
-      } else {
-        articleContainer.textContent = "Select a paragraph to view the text.";
       }
     }
 
-    async function translateWord(element, word) {
+    function translateWord(element, word) {
       if (lastClickedWord) {
-        lastClickedWord.classList.remove('active');
+        lastClickedWord.classList.remove("active");
       }
-      element.classList.add('active');
+      element.classList.add("active");
       lastClickedWord = element;
-
-      try {
-        const response = await fetch(`${TRANSLATION_API}${word}&langpair=en|zh-CN`);
-        const data = await response.json();
-        const translation = data.responseData.translatedText;
-        document.getElementById("translation-bar").textContent = `${word} - ${translation}`;
-        speakText(word);
-      } catch (error) {
-        console.error("Error translating word:", error);
-      }
-    }
-
-    function speakText(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
+      
+      document.getElementById("translation-bar").textContent = `Translating: ${word}`;
+      
+      const utterance = new SpeechSynthesisUtterance(word);
       utterance.lang = "en-US";
       speechSynthesis.speak(utterance);
+    }
+
+    function prevParagraph() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateArticle();
+      }
+    }
+
+    function nextParagraph() {
+      if (currentIndex < articles.length - 1) {
+        currentIndex++;
+        updateArticle();
+      }
     }
 
     fetchArticles();
