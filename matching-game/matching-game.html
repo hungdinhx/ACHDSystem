@@ -119,99 +119,134 @@
 
   <script>
     const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s';
-    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
-    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
+const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
 
-    let vocabulary = [];
-    let selectedButton = null;
-    let matchedPairs = 0;
+let vocabulary = [];
+let selectedButton = null;
+let matchedPairs = 0;
 
-    const gameBoard = document.getElementById('game-board');
-    const resetButton = document.getElementById('reset-button');
-    const winnerMessage = document.getElementById('winner-message');
-    const lessonSelect = document.getElementById('lesson-select');
+const gameBoard = document.getElementById('game-board');
+const resetButton = document.getElementById('reset-button');
+const winnerMessage = document.getElementById('winner-message');
+const lessonSelect = document.getElementById('lesson-select');
 
-    function speakText(text, lang) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      speechSynthesis.speak(utterance);
-    }
+function speakText(text, lang) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  speechSynthesis.speak(utterance);
+}
 
-    function createButton(word, type) {
-      const button = document.createElement('button');
-      button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
-      button.setAttribute('data-id', word.id);
-      button.textContent = type === 'english' ? word.english : word.chinese;
-      button.onclick = () => {
-        speakText(button.textContent, type === 'english' ? 'en-US' : 'zh-CN');
-        buttonClicked(button, word, type);
-      };
-      return button;
-    }
+function createButton(word, type) {
+  const button = document.createElement('button');
+  button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
+  button.setAttribute('data-id', word.id);
+  button.textContent = type === 'english' ? word.english : word.chinese;
+  button.onclick = () => {
+    speakText(button.textContent, type === 'english' ? 'en-US' : 'zh-CN');
+    buttonClicked(button, word, type);
+  };
+  return button;
+}
 
-    function startGame(lesson) {
-      matchedPairs = 0;
-      gameBoard.innerHTML = '';
+function startGame(selectedLesson) {
+  matchedPairs = 0;
+  gameBoard.innerHTML = '';
+  selectedButton = null;
+  winnerMessage.style.display = 'none';
+
+  let filteredWords = selectedLesson === "all" 
+    ? vocabulary 
+    : vocabulary.filter(word => word.lesson === selectedLesson);
+
+  if (filteredWords.length === 0) {
+    gameBoard.innerHTML = '<p>No words available for this lesson.</p>';
+    return;
+  }
+
+  const selectedWords = filteredWords.slice(0, 10);
+  const allButtons = [];
+
+  selectedWords.forEach(word => {
+    allButtons.push(createButton(word, 'english'));
+    allButtons.push(createButton(word, 'chinese'));
+  });
+
+  allButtons.sort(() => Math.random() - 0.5);
+  allButtons.forEach(button => gameBoard.appendChild(button));
+}
+
+function buttonClicked(button, word, type) {
+  if (selectedButton && selectedButton.button === button) return;
+
+  if (!selectedButton) {
+    selectedButton = { button, word, type };
+    button.classList.add('selected');
+    return;
+  }
+
+  if (selectedButton.word.id === word.id && selectedButton.type !== type) {
+    matchedPairs++;
+    setTimeout(() => {
+      selectedButton.button.remove();
+      button.remove();
       selectedButton = null;
-      winnerMessage.style.display = 'none';
 
-      const selectedWords = vocabulary.slice(0, 10);
-      const allButtons = [];
-
-      selectedWords.forEach(word => {
-        allButtons.push(createButton(word, 'english'));
-        allButtons.push(createButton(word, 'chinese'));
-      });
-
-      allButtons.sort(() => Math.random() - 0.5);
-      allButtons.forEach(button => gameBoard.appendChild(button));
-    }
-
-    function buttonClicked(button, word, type) {
-      if (selectedButton && selectedButton.button === button) return;
-
-      if (!selectedButton) {
-        selectedButton = { button, word, type };
-        button.classList.add('selected');
-        return;
+      if (matchedPairs === Math.floor(gameBoard.children.length / 2)) {
+        winnerMessage.style.display = 'block';
       }
+    }, 300);
+  } else {
+    setTimeout(() => {
+      selectedButton.button.classList.remove('selected');
+      button.classList.remove('selected');
+      selectedButton = null;
+    }, 500);
+  }
+}
 
-      if (selectedButton.word.id === word.id && selectedButton.type !== type) {
-        matchedPairs++;
-        setTimeout(() => {
-          selectedButton.button.remove();
-          button.remove();
-          selectedButton = null;
+async function fetchVocabulary() {
+  try {
+    const response = await fetch(SHEET_URL);
+    const data = await response.json();
 
-          if (matchedPairs === Math.floor(gameBoard.children.length / 2)) {
-            winnerMessage.style.display = 'block';
-          }
-        }, 300);
-      } else {
-        setTimeout(() => {
-          selectedButton.button.classList.remove('selected');
-          button.classList.remove('selected');
-          selectedButton = null;
-        }, 500);
-      }
+    if (!data.values || data.values.length < 2) {
+      console.error("No data found in the sheet.");
+      return;
     }
 
-    async function fetchVocabulary() {
-      const response = await fetch(SHEET_URL);
-      const data = await response.json();
-      vocabulary = data.values.slice(1).map((row, index) => ({
-        id: index + 1,
-        english: row[0],
-        chinese: row[1],
-        lesson: row[2],
-      }));
-      startGame(lessonSelect.value);
-    }
+    vocabulary = data.values.slice(1).map((row, index) => ({
+      id: index + 1,
+      english: row[0],
+      chinese: row[1],
+      lesson: row[2] || "Uncategorized",
+    }));
 
-    resetButton.addEventListener('click', () => startGame(lessonSelect.value));
-    lessonSelect.addEventListener('change', () => startGame(lessonSelect.value));
+    populateLessonsDropdown();
+    startGame(lessonSelect.value);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+}
 
-    fetchVocabulary();
+function populateLessonsDropdown() {
+  const uniqueLessons = [...new Set(vocabulary.map(word => word.lesson))];
+
+  lessonSelect.innerHTML = '<option value="all">All Lessons</option>';
+  
+  uniqueLessons.forEach(lesson => {
+    const option = document.createElement('option');
+    option.value = lesson;
+    option.textContent = lesson;
+    lessonSelect.appendChild(option);
+  });
+}
+
+resetButton.addEventListener('click', () => startGame(lessonSelect.value));
+lessonSelect.addEventListener('change', () => startGame(lessonSelect.value));
+
+fetchVocabulary();
+
   </script>
 </body>
 </html>
