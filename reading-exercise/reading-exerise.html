@@ -98,9 +98,10 @@
   <div id="article-container" class="article-container">Select a paragraph to view the text.</div>
 
   <script>
-    const SHEET_ID = '1QsT4ygsGvmsj4b2JGzf_n-S2WhBMMbPdyyYbdZ9qDm4';
-    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
-    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
+    const SHEET_ID = '1QsT4ygsGvmsj4b2JGzf_n-S2WhBMMbPdyyYbdZ9qDm4';  // Google Sheets API ID
+    const SHEET_API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';  // Google Sheets API Key
+    const DEEPL_API_KEY = '2866dba8-9519-4c80-acd4-0f25d4823870:fx';  // DeepL API Key
+    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${SHEET_API_KEY}`;
     let articles = [];
     let currentIndex = 0;
     let lastClickedWord = null;
@@ -151,7 +152,7 @@
       }
     }
 
-    function translateWord(element, word) {
+    async function translateWord(element, word) {
       if (lastClickedWord) {
         lastClickedWord.classList.remove("active");
       }
@@ -159,10 +160,17 @@
       lastClickedWord = element;
       
       document.getElementById("translation-bar").textContent = `Translating: ${word}`;
-      
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = "en-US";
-      speechSynthesis.speak(utterance);
+
+      const endpoint = `https://api-free.deepl.com/v2/translate?auth_key=${DEEPL_API_KEY}&text=${word}&source_lang=EN&target_lang=ZH`;
+      try {
+        const response = await fetch(endpoint);
+        const data = await response.json();
+        const translatedText = data.translations[0].text;
+        document.getElementById("translation-bar").textContent = `Chinese Translation: ${translatedText}`;
+      } catch (error) {
+        console.error('Error fetching translation:', error);
+        document.getElementById("translation-bar").textContent = 'Error fetching translation.';
+      }
     }
 
     function prevParagraph() {
