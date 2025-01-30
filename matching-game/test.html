@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vocabulary Matching Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 24px;
+    }
+
+    #timer {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      height: auto;
+      margin-bottom: 20px;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background-color: #ffeb3b;
+      border: none;
+      padding: 15px;
+      font-size: 18px;
+      color: #333;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #ff9800;
+    }
+
+    button.selected {
+      background-color: #ff5722;
+      color: #fff;
+    }
+
+    #reset-button {
+      background-color: #009688;
+      color: white;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 8px;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    #winner-message {
+      font-size: 24px;
+      color: #4caf50;
+      display: none;
+      margin-top: 20px;
+    }
+
+    #lesson-select {
+      margin-bottom: 20px;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <h1>Vocabulary Matching Game</h1>
+    <select id="lesson-select">
+      <option value="all">All Lessons</option>
+    </select>
+    <div id="timer">Time: 0:00</div>
+
+    <div id="game-board" class="game-board"></div>
+
+    <button id="reset-button">Restart Game</button>
+
+    <div id="winner-message">Congratulations! You matched all words!</div>
+  </div>
+
+  <script>
+    const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s';
+    const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
+
+    let vocabulary = [];
+    let selectedButton = null;
+    let matchedPairs = 0;
+
+    const gameBoard = document.getElementById('game-board');
+    const resetButton = document.getElementById('reset-button');
+    const winnerMessage = document.getElementById('winner-message');
+    const lessonSelect = document.getElementById('lesson-select');
+
+    function speakText(text, lang) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      speechSynthesis.speak(utterance);
+    }
+
+    function createButton(word, type) {
+      const button = document.createElement('button');
+      button.classList.add(type === 'english' ? 'english-button' : 'chinese-button');
+      button.setAttribute('data-id', word.id);
+      button.textContent = type === 'english' ? word.english : word.chinese;
+      button.onclick = () => {
+        speakText(button.textContent, type === 'english' ? 'en-US' : 'zh-CN');
+        buttonClicked(button, word, type);
+      };
+      return button;
+    }
+
+    async function fetchVocabulary() {
+      const response = await fetch(SHEET_URL);
+      const data = await response.json();
+      vocabulary = data.values.slice(1).map((row, index) => ({
+        id: index + 1,
+        english: row[0],
+        chinese: row[1],
+        lesson: row[2],
+      }));
+
+      const lessons = [...new Set(vocabulary.map(word => word.lesson))].filter(Boolean);
+      lessonSelect.innerHTML = '<option value="all">All Lessons</option>' +
+        lessons.map(lesson => `<option value="${lesson}">${lesson}</option>`).join('');
+
+      startGame(lessonSelect.value);
+    }
+
+    function startGame(selectedLesson) {
+      matchedPairs = 0;
+      gameBoard.innerHTML = '';
+      selectedButton = null;
+      winnerMessage.style.display = 'none';
+
+      let selectedWords = selectedLesson === 'all' 
+        ? vocabulary.slice(0, 10) 
+        : vocabulary.filter(word => word.lesson === selectedLesson).slice(0, 10);
+
+      const allButtons = [];
+      selectedWords.forEach(word => {
+        allButtons.push(createButton(word, 'english'));
+        allButtons.push(createButton(word, 'chinese'));
+      });
+
+      allButtons.sort(() => Math.random() - 0.5);
+      allButtons.forEach(button => gameBoard.appendChild(button));
+    }
+
+    resetButton.addEventListener('click', () => startGame(lessonSelect.value));
+    lessonSelect.addEventListener('change', () => startGame(lessonSelect.value));
+
+    fetchVocabulary();
+  </script>
+</body>
+</html>
