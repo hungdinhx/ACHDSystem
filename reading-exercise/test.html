@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Article Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e8f5e9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .top-bar {
+      width: 100%;
+      background-color: #2e7d32;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+    .translation-bar {
+      width: 100%;
+      max-width: 800px;
+      background-color: #ffeb3b;
+      padding: 10px;
+      text-align: center;
+      font-size: 18px;
+      border-radius: 5px;
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+    .dropdown-container {
+      margin-top: 20px;
+    }
+    .article-container {
+      width: 100%;
+      max-width: 800px;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      margin-top: 20px;
+      text-align: center;
+      font-size: 24px;
+      line-height: 1.1;
+      color: #37474f;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-bottom: 60px;
+    }
+    .navigation-buttons button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .navigation-buttons button:hover {
+      background-color: #388e3c;
+    }
+    .paragraph-indicator {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar" id="article-title">Loading...</div>
+  <div class="translation-bar" id="translation-bar">Click a word to see its translation.</div>
+  
+  <div class="dropdown-container">
+    <label for="article-select">Select an article:</label>
+    <select id="article-select" onchange="loadParagraphs()">
+      <option value="">Loading...</option>
+    </select>
+  </div>
+
+  <div class="dropdown-container">
+    <label for="paragraph-select">Select a paragraph:</label>
+    <select id="paragraph-select" onchange="displayParagraph()">
+      <option value="">Select an article first</option>
+    </select>
+  </div>
+
+  <div class="paragraph-indicator" id="paragraph-indicator"></div>
+  <div id="article-container" class="article-container">Select an article and a paragraph.</div>
+
+  <script>
+    const SHEET_ID = '1QsT4ygsGvmsj4b2JGzf_n-S2WhBMMbPdyyYbdZ9qDm4';
+    const SHEET_API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${SHEET_API_KEY}`;
+
+    let articles = {};
+    let selectedArticle = "";
+    let paragraphs = [];
+    let currentParagraphIndex = 0;
+
+    async function fetchArticles() {
+      try {
+        const response = await fetch(SHEET_URL);
+        const data = await response.json();
+        
+        if (data.values && data.values.length > 1) {
+          articles = {};
+          data.values.slice(1).forEach(row => {
+            const id = row[0];
+            const text = row[1];
+            const title = row[2];
+
+            if (!articles[title]) {
+              articles[title] = [];
+            }
+            articles[title].push({ id, text });
+          });
+
+          populateArticleDropdown();
+        } else {
+          document.getElementById('article-select').innerHTML = '<option value="">No articles found</option>';
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    }
+
+    function populateArticleDropdown() {
+      const articleDropdown = document.getElementById('article-select');
+      articleDropdown.innerHTML = '<option value="">Select an article</option>';
+      
+      Object.keys(articles).forEach(title => {
+        const option = document.createElement('option');
+        option.value = title;
+        option.textContent = title;
+        articleDropdown.appendChild(option);
+      });
+    }
+
+    function loadParagraphs() {
+      const articleDropdown = document.getElementById('article-select');
+      selectedArticle = articleDropdown.value;
+      paragraphs = selectedArticle ? articles[selectedArticle] : [];
+      populateParagraphDropdown();
+    }
+
+    function populateParagraphDropdown() {
+      const paragraphDropdown = document.getElementById('paragraph-select');
+      paragraphDropdown.innerHTML = '<option value="">Select a paragraph</option>';
+      
+      paragraphs.forEach((paragraph, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `Paragraph ${paragraph.id}`;
+        paragraphDropdown.appendChild(option);
+      });
+    }
+
+    function displayParagraph() {
+      const paragraphDropdown = document.getElementById('paragraph-select');
+      currentParagraphIndex = parseInt(paragraphDropdown.value);
+      updateArticle();
+    }
+
+    function updateArticle() {
+      const articleContainer = document.getElementById('article-container');
+      const titleBar = document.getElementById('article-title');
+      const paragraphIndicator = document.getElementById('paragraph-indicator');
+
+      if (paragraphs.length > 0 && currentParagraphIndex >= 0 && currentParagraphIndex < paragraphs.length) {
+        titleBar.textContent = selectedArticle;
+        const paragraph = paragraphs[currentParagraphIndex];
+
+        articleContainer.innerHTML = paragraph.text.split(" ")
+          .map(word => `<span class='word' onclick='translateWord(this, "${word}")'>${word}</span>`)
+          .join(" ");
+
+        paragraphIndicator.textContent = `${currentParagraphIndex + 1} / ${paragraphs.length} paragraphs`;
+      }
+    }
+
+    async function translateWord(element, word) {
+      document.getElementById("translation-bar").textContent = `Translating: ${word}`;
+      
+      const endpoint = `https://api-free.deepl.com/v2/translate?auth_key=2866dba8-9519-4c80-acd4-0f25d4823870:fx&text=${word}&source_lang=EN&target_lang=ZH`;
+      try {
+        const response = await fetch(endpoint);
+        const data = await response.json();
+        document.getElementById("translation-bar").textContent = `Chinese Translation: ${data.translations[0].text}`;
+      } catch (error) {
+        document.getElementById("translation-bar").textContent = 'Error fetching translation.';
+      }
+    }
+
+    fetchArticles();
+  </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>64 Hexagrams</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #e3f2fd; /* Soft blue background */
+            text-align: center;
+            margin: 0;
+        }
+        .card {
+            background: #ffffff; /* White card */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            font-size: 1.8em;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #37474f; /* Dark blue-gray text */
+        }
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        button {
+            margin: 8px;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #1565c0; /* Deep blue */
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0d47a1; /* Darker blue on hover */
+        }
+        .selected {
+            background: #ff9800 !important; /* Highlight selected button */
+        }
+        .nav-buttons {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2 style="color: #1e3a5f;">64 Hexagrams</h2>
+    <div class="card" id="flashcard">Loading...</div>
+    
+    <div class="button-container" id="button-container"></div>
+    
+    <div class="nav-buttons">
+        <button onclick="prevCard()">Previous</button>
+        <button onclick="nextCard()">Next</button>
+    </div>
+
+    <script>
+        const SHEET_ID = "1utgmNPXqXYGRIOf0pvlgkeY8AxPFGU2lwTkvqvyu1aQ";
+        const API_KEY = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+        const API_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A1:F100?key=${API_KEY}`;
+
+        let data = [];
+        let currentIndex = 0;
+        let selectedColumn = 1; // Default to column B
+
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                if (result.values && result.values.length > 1) {
+                    data = result.values.slice(1); // Exclude headers
+                    data = data.sort(() => Math.random() - 0.5); // Shuffle rows
+                    renderButtons(result.values[0]); // Use row 1 as button labels
+                    renderCard();
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.getElementById("flashcard").textContent = "Error loading data.";
+            }
+        }
+
+        function renderButtons(headers) {
+            const buttonContainer = document.getElementById("button-container");
+            buttonContainer.innerHTML = "";
+
+            headers.forEach((header, col) => {
+                const button = document.createElement("button");
+                button.textContent = header; // Use row 1 as button text
+                button.dataset.col = col;
+                button.onclick = () => selectColumn(col);
+                if (col === selectedColumn) button.classList.add("selected"); // Highlight selected button
+                buttonContainer.appendChild(button);
+            });
+        }
+
+        function selectColumn(col) {
+            selectedColumn = col;
+            document.querySelectorAll(".button-container button").forEach(btn => {
+                btn.classList.remove("selected");
+            });
+            event.target.classList.add("selected");
+            renderCard();
+        }
+
+        function renderCard() {
+            if (data.length === 0) return;
+            const flashcard = document.getElementById("flashcard");
+            const text = data[currentIndex][selectedColumn] || "No Data";
+            flashcard.textContent = text;
+            speakText(text, selectedColumn);
+        }
+
+        function nextCard() {
+            currentIndex = (currentIndex + 1) % data.length;
+            renderCard();
+        }
+
+        function prevCard() {
+            currentIndex = (currentIndex - 1 + data.length) % data.length;
+            renderCard();
+        }
+
+        function speakText(text, col) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+
+                // If text contains Chinese characters, use Chinese voice
+                if (/[\u4e00-\u9fa5]/.test(text)) {
+                    utterance.lang = 'zh-CN';
+                } else {
+                    utterance.lang = 'en-US';
+                }
+
+                // Ensure column B (Pinyin) is not spoken
+                if (col === 1) return;
+
+                utterance.rate = 1; // Normal speed
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
