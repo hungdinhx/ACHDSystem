@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script>
+        const SHEET_API_KEY = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+        const SHEET_ID = "1KzuHUPiWefHFKA3f7bOoQbg8WVfGxDtfoNDm-linK_4";
+        const SHEET_NAME = "Sheet1"; // Change if needed
+
+        async function login(event) {
+            event.preventDefault(); // Prevent page reload
+
+            const username = document.getElementById("username").value.trim();
+            if (!username) {
+                alert("Please enter a username.");
+                return;
+            }
+
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:Z1?key=${SHEET_API_KEY}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!data.values || data.values.length === 0) {
+                    alert("Failed to fetch user list.");
+                    return;
+                }
+
+                const userList = data.values[0]; // Row 1 (Usernames)
+                
+                if (userList.includes(username)) {
+                    localStorage.setItem("loggedInUser", username);
+                    window.location.href = "dashboard.html"; // Redirect to dashboard
+                } else {
+                    alert("Username not found. Please try again.");
+                }
+            } catch (error) {
+                console.error("Error fetching user list:", error);
+                alert("Error logging in. Please try again.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>Login</h2>
+    <form onsubmit="login(event)">
+        <input type="text" id="username" placeholder="Enter your username" required>
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>
