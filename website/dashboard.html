@@ -3,7 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Quiz Dashboard</title>
+    <style>
+        /* Mobile First Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+
+        .dashboard-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #007bff;
+        }
+
+        p {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .quiz-question {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .choices button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px 0;
+            width: 80%;
+            max-width: 300px;
+            transition: background-color 0.3s;
+        }
+
+        .choices button:hover {
+            background-color: #0056b3;
+        }
+
+        .alert {
+            color: red;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .result {
+            font-size: 18px;
+            margin-top: 20px;
+            color: #28a745;
+        }
+
+        #userData {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .logout-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* For Dropdown */
+        select {
+            padding: 10px;
+            font-size: 16px;
+            width: 80%;
+            max-width: 300px;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+
+        option[disabled] {
+            color: #ccc;
+        }
+
+        /* Responsive for larger screens */
+        @media (min-width: 600px) {
+            .dashboard-container {
+                padding: 30px;
+                max-width: 800px;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+
+            h3 {
+                font-size: 22px;
+            }
+
+            .choices button {
+                font-size: 18px;
+            }
+        }
+    </style>
     <script>
         const SHEET_API_KEY = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
         const SHEET_ID = "1KzuHUPiWefHFKA3f7bOoQbg8WVfGxDtfoNDm-linK_4";
@@ -11,6 +152,19 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTjQV2e4kz1fbQREwK1D76JDxMMVhp7SLllC_ESb4eMr39iCy-omLz6yqyl6L5ROQk/exec"; // Replace with your actual Google Apps Script URL
 
         let userColumn = -1; // Store the user's column index
+        let currentLevel = 0; // Track the user's current level
+        const questions = [
+            { question: "What is 2 + 2?", choices: ["3", "4", "5"], correct: 1 },
+            { question: "What is the capital of France?", choices: ["London", "Paris", "Berlin"], correct: 1 },
+            { question: "Who wrote 'Romeo and Juliet'?", choices: ["Shakespeare", "Dickens", "Hemingway"], correct: 0 },
+            { question: "What is the largest planet?", choices: ["Earth", "Jupiter", "Mars"], correct: 1 },
+            { question: "What is the square root of 16?", choices: ["2", "4", "8"], correct: 1 },
+            { question: "Who discovered gravity?", choices: ["Einstein", "Newton", "Galileo"], correct: 1 },
+            { question: "What is the chemical symbol for water?", choices: ["O2", "H2O", "CO2"], correct: 1 },
+            { question: "What is 5 * 3?", choices: ["15", "10", "12"], correct: 0 },
+            { question: "Which planet is known as the Red Planet?", choices: ["Mars", "Earth", "Venus"], correct: 0 },
+            { question: "How many continents are there?", choices: ["6", "7", "8"], correct: 1 }
+        ];
 
         async function loadUserData() {
             const username = localStorage.getItem("loggedInUser");
@@ -19,68 +173,76 @@
                 return;
             }
 
-            if (userColumn !== -1 && data.values.length > 1) { 
-    const userRealName = data.values[1][userColumn] || username; // Get value from row 2
-    document.getElementById("welcomeMessage").innerText = `Welcome, ${userRealName}!`;
-}
-
-
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A:Z?key=${SHEET_API_KEY}`;
-
+            // Fetch user data from the sheet
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}!A1:Z3?key=${SHEET_API_KEY}`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                
                 if (!data.values || data.values.length === 0) {
                     alert("Failed to fetch user data.");
                     return;
                 }
 
-                const userList = data.values[0]; // Row 1 (Usernames)
-                userColumn = userList.indexOf(username); // Store the user’s column index
+                const usernames = data.values[0]; // Row 1 (Usernames)
+                const levels = data.values[1]; // Row 2 (Levels)
+                const names = data.values[2]; // Row 3 (Names)
+                userColumn = usernames.indexOf(username); // Find the column of the logged-in user
 
                 if (userColumn === -1) {
-                    alert("User data not found.");
+                    alert("User not found.");
                     return;
                 }
 
-                const userData = data.values.map(row => row[userColumn] || ""); // Extract user's column
-                displayUserData(userData);
+                currentLevel = parseInt(levels[userColumn]) || 0; // Set current level based on row 2
+                const userName = names[userColumn]; // Get the user's name from Row 3
+                document.getElementById("welcomeMessage").textContent = `Welcome, ${userName}!`; // Display user's name
+
+                loadQuestion();
+                updateLevelDropdown(levels);
             } catch (error) {
                 console.error("Error fetching data:", error);
                 alert("Error loading user data.");
             }
         }
 
-        function displayUserData(userData) {
-            const userDataDiv = document.getElementById("userData");
-            userDataDiv.innerHTML = "<h3>Your Data:</h3>";
-            userData.forEach((item, index) => {
-                userDataDiv.innerHTML += `<p><strong>Row ${index + 1}:</strong> ${item}</p>`;
-            });
+        function loadQuestion() {
+            if (currentLevel >= questions.length) {
+                document.getElementById("question").textContent = "Congratulations! You've completed all the questions!";
+                document.getElementById("choices").innerHTML = "";
+                return;
+            }
 
-            // Display the last entered value
-            document.getElementById("displayData").textContent = userData[userData.length - 1] || "No data yet";
+            const questionData = questions[currentLevel];
+            document.getElementById("question").textContent = questionData.question;
+            const choicesDiv = document.getElementById("choices");
+            choicesDiv.innerHTML = "";
+
+            questionData.choices.forEach((choice, index) => {
+                const button = document.createElement("button");
+                button.textContent = choice;
+                button.onclick = () => checkAnswer(index);
+                choicesDiv.appendChild(button);
+            });
         }
 
-        async function submitData(event) {
-            event.preventDefault(); // Prevents form from reloading the page
-
-            if (userColumn === -1) {
-                alert("User column not found. Please reload the page.");
-                return;
+        async function checkAnswer(selectedIndex) {
+            const questionData = questions[currentLevel];
+            if (selectedIndex === questionData.correct) {
+                currentLevel++;
+                document.getElementById("result").textContent = "Correct! Moving to the next question.";
+                await updateLevelInSheet();
+                setTimeout(loadQuestion, 1500); // Wait a bit before loading the next question
+            } else {
+                document.getElementById("result").textContent = "Incorrect! Try again.";
             }
+        }
 
-            const userInput = document.getElementById("userInput").value.trim();
-            if (!userInput) {
-                alert("Please enter some data.");
-                return;
-            }
-
+        async function updateLevelInSheet() {
+            const username = localStorage.getItem("loggedInUser");
             const formData = new URLSearchParams();
-            formData.append("username", localStorage.getItem("loggedInUser"));
+            formData.append("username", username);
             formData.append("column", userColumn);
-            formData.append("data", userInput);
+            formData.append("data", currentLevel.toString());
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -91,40 +253,48 @@
                     body: formData
                 });
 
-                // Since `no-cors` might be used, assume success if no error occurs
-                document.getElementById("displayData").textContent = userInput;
-                document.getElementById("userInput").value = ""; // Clear input field
-                alert("Data submitted successfully!");
-
-                // Reload user data after submission
-                loadUserData();
+                if (response.ok) {
+                    console.log("Level updated in Google Sheets.");
+                } else {
+                    alert("Error updating level.");
+                }
             } catch (error) {
-                console.error("Error updating data:", error);
-                alert("Submission error.");
+                console.error("Error updating level:", error);
+                alert("Error submitting level.");
             }
+        }
+
+        function updateLevelDropdown(levels) {
+            const levelDropdown = document.getElementById("levelDropdown");
+            levels.forEach((level, index) => {
+                const option = document.createElement("option");
+                option.textContent = `Level ${index + 1}`;
+                option.disabled = index > currentLevel; // Disable levels that are higher than the current one
+                if (index <= currentLevel) {
+                    option.style.color = "#007bff"; // Normal color for completed levels
+                } else {
+                    option.style.color = "#ccc"; // Dull color for unaccomplished levels
+                }
+                levelDropdown.appendChild(option);
+            });
         }
 
         function logout() {
             localStorage.removeItem("loggedInUser");
-            window.location.replace("index.html"); // Redirect to login
+            window.location.href = "index.html"; // Redirect to login page
         }
 
         window.onload = loadUserData;
     </script>
 </head>
 <body>
-
-    <h2 id="welcomeMessage"></h2>
-    <div id="userData"></div>
-
-    <h3>Submit Data</h3>
-    <p>Current Data: <span id="displayData">No data yet</span></p>
-
-    <form onsubmit="submitData(event)">
-        <input type="text" id="userInput" placeholder="Enter new data" required>
-        <button type="submit">Update Data</button>
-    </form>
-
-    <button onclick="logout()">Logout</button>
+    <div class="dashboard-container">
+        <h2 id="welcomeMessage"></h2>
+        <h3 id="question"></h3>
+        <div id="choices" class="choices"></div>
+        <div class="result" id="result"></div>
+        <select id="levelDropdown"></select>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
 </body>
 </html>
