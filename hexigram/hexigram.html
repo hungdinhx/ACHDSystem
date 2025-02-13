@@ -119,12 +119,23 @@
         }
 
         function renderCard() {
-            if (data.length === 0) return;
-            const flashcard = document.getElementById("flashcard");
-            const text = data[currentIndex][selectedColumn] || "No Data";
-            flashcard.textContent = text;
-            speakText(text, selectedColumn);
-        }
+    if (data.length === 0) return;
+    
+    const flashcard = document.getElementById("flashcard");
+    const text = data[currentIndex][selectedColumn] || "No Data";
+
+    // Check if the selected column is the one to enlarge (e.g., column C, index 2)
+    if (selectedColumn === 2) {  // Column C (0-based index)
+        flashcard.style.fontSize = "8em"; // Larger font
+        flashcard.style.fontWeight = "normal"; // Make it bold
+    } else {
+        flashcard.style.fontSize = "1.8em"; // Default font size
+        flashcard.style.fontWeight = "normal"; // Default weight
+    }
+
+    flashcard.textContent = text;
+    speakText(text, selectedColumn);
+}
 
         function nextCard() {
             currentIndex = (currentIndex + 1) % data.length;
