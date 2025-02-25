@@ -19,66 +19,143 @@
             font-size: 2em;
             margin-bottom: 20px;
         }
-        .video-list {
+        .video-container {
             width: 100%;
             max-width: 800px;
-            background: #222;
-            border-radius: 10px;
-            padding: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        .video-item {
-            padding: 15px;
-            border-bottom: 1px solid #444;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .video-item:hover {
-            background: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         iframe {
             width: 100%;
             max-width: 800px;
             height: 450px;
-            display: none;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            margin-top: 20px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #e64a19;
+        }
+        select {
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .video-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            max-width: 800px;
+        }
+        .video-item {
+            width: 150px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            text-align: center;
+        }
+        .video-item:hover {
+            transform: scale(1.1);
+        }
+        .video-item img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
 <body>
     <h1>iPad Video Player</h1>
-    <div class="video-list" id="videoList"></div>
-    <iframe id="videoFrame" allowfullscreen></iframe>
+    <div class="video-container">
+        <iframe id="videoFrame" allowfullscreen></iframe>
+        <div class="controls">
+            <button id="prevPart">Previous Part</button>
+            <select id="videoDropdown"></select>
+            <button id="nextPart">Next Part</button>
+        </div>
+        <div class="video-list" id="videoList"></div>
+    </div>
 
     <script>
         const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
         const SHEET_ID = '1jciq3IYJ8MAye3Gdyuy0bbwcHMHLftKDiBrauzju-oY';
-        const RANGE = 'A2:B';
+        const RANGE = 'A2:D';
+        let currentParts = [];
+        let currentIndex = 0;
 
         async function fetchVideos() {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                displayVideos(data.values);
+                processVideos(data.values);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
         }
 
-        function displayVideos(videos) {
+        function processVideos(videos) {
+            const videoMap = {};
+            videos.forEach(([link, title, part, thumbnail]) => {
+                if (!videoMap[title]) {
+                    videoMap[title] = { thumbnail, parts: [] };
+                }
+                videoMap[title].parts.push({ link, part });
+            });
+            displayVideos(videoMap);
+        }
+
+        function displayVideos(videoMap) {
             const videoList = document.getElementById('videoList');
             videoList.innerHTML = '';
-            videos.forEach(video => {
-                const [link, title] = video;
+            Object.keys(videoMap).forEach(title => {
+                const videoData = videoMap[title];
                 const div = document.createElement('div');
                 div.className = 'video-item';
-                div.innerText = title;
-                div.onclick = () => playVideo(link);
+                
+                const img = document.createElement('img');
+                img.src = videoData.thumbnail;
+                img.alt = title;
+                div.appendChild(img);
+                
+                const caption = document.createElement('div');
+                caption.innerText = title;
+                div.appendChild(caption);
+                
+                div.onclick = function() { loadVideoParts(videoData.parts); };
                 videoList.appendChild(div);
             });
+        }
+
+        function loadVideoParts(parts) {
+            const dropdown = document.getElementById('videoDropdown');
+            dropdown.innerHTML = '';
+            currentParts = parts;
+            currentIndex = 0;
+            
+            parts.forEach((partData, index) => {
+                const option = document.createElement('option');
+                option.value = partData.link;
+                option.innerText = partData.part ? `Part ${partData.part}` : 'Full Video';
+                dropdown.appendChild(option);
+            });
+            
+            playVideo(currentParts[currentIndex].link);
         }
 
         function playVideo(link) {
@@ -86,6 +163,27 @@
             videoFrame.src = `${link.replace("/view", "/preview")}`;
             videoFrame.style.display = 'block';
         }
+
+        document.getElementById('prevPart').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                document.getElementById('videoDropdown').selectedIndex = currentIndex;
+                playVideo(currentParts[currentIndex].link);
+            }
+        });
+
+        document.getElementById('nextPart').addEventListener('click', () => {
+            if (currentIndex < currentParts.length - 1) {
+                currentIndex++;
+                document.getElementById('videoDropdown').selectedIndex = currentIndex;
+                playVideo(currentParts[currentIndex].link);
+            }
+        });
+
+        document.getElementById('videoDropdown').addEventListener('change', function() {
+            currentIndex = this.selectedIndex;
+            playVideo(this.value);
+        });
 
         fetchVideos();
     </script>
