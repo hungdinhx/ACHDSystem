@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPad Video Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: #181818;
+            color: white;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .video-list {
+            width: 100%;
+            max-width: 800px;
+            background: #222;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .video-item {
+            padding: 15px;
+            border-bottom: 1px solid #444;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .video-item:hover {
+            background: #333;
+        }
+        iframe {
+            width: 100%;
+            max-width: 800px;
+            height: 450px;
+            display: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>iPad Video Player</h1>
+    <div class="video-list" id="videoList"></div>
+    <iframe id="videoFrame" allowfullscreen></iframe>
+
+    <script>
+        const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+        const SHEET_ID = '1jciq3IYJ8MAye3Gdyuy0bbwcHMHLftKDiBrauzju-oY';
+        const RANGE = 'A2:B';
+
+        async function fetchVideos() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayVideos(data.values);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function displayVideos(videos) {
+            const videoList = document.getElementById('videoList');
+            videoList.innerHTML = '';
+            videos.forEach(video => {
+                const [link, title] = video;
+                const div = document.createElement('div');
+                div.className = 'video-item';
+                div.innerText = title;
+                div.onclick = () => playVideo(link);
+                videoList.appendChild(div);
+            });
+        }
+
+        function playVideo(link) {
+            const videoFrame = document.getElementById('videoFrame');
+            videoFrame.src = `${link.replace("/view", "/preview")}`;
+            videoFrame.style.display = 'block';
+        }
+
+        fetchVideos();
+    </script>
+</body>
+</html>

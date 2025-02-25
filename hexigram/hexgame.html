@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexagram Builder</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+        }
+
+        .bagua-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hexagram-container {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0% 75%, 0% 25%);
+            background-color: white;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .line {
+            width: 80px;
+            height: 10px;
+            margin: 3px 0;
+            background-color: black;
+        }
+
+        .yin {
+            background: linear-gradient(to right, black 40%, white 40%, white 60%, black 60%);
+        }
+
+        .button-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button {
+            position: absolute;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: 0.3s;
+            color: white;
+            width: 80px;
+            height: 40px;
+            text-align: center;
+            background-color: transparent;
+            z-index: 1;
+        }
+
+        .yang-btn {
+            background-color: #1565c0;
+        }
+
+        .yang-btn:hover {
+            background-color: #0d47a1;
+        }
+
+        .yin-btn {
+            background-color: #ff5722;
+        }
+
+        .yin-btn:hover {
+            background-color: #d84315;
+        }
+
+        /* Adjusted button positions */
+        .button1 { top: 5%; left: 50%; transform: translate(-50%, -50%); }
+        .button2 { top: 20%; right: 10%; transform: translate(50%, -50%); }
+        .button3 { top: 50%; right: 5%; transform: translate(50%, -50%); }
+        .button4 { bottom: 20%; right: 10%; transform: translate(50%, 50%); }
+        .button5 { bottom: 5%; left: 50%; transform: translate(-50%, 50%); }
+        .button6 { bottom: 20%; left: 10%; transform: translate(-50%, 50%); }
+        .button7 { top: 50%; left: 5%; transform: translate(-50%, -50%); }
+        .button8 { top: 20%; left: 10%; transform: translate(-50%, -50%); }
+
+        #hexagram-name {
+            margin-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Hexagram Builder</h2>
+    <div class="bagua-container">
+        <div class="hexagram-container" id="hexagram"></div>
+        <div class="button-container">
+            <button class="yang-btn button1" onclick="selectTrigram('qian')">☰ Qian</button>
+            <button class="yang-btn button2" onclick="selectTrigram('dui')">☱ Dui</button>
+            <button class="yang-btn button3" onclick="selectTrigram('li')">☲ Li</button>
+            <button class="yang-btn button4" onclick="selectTrigram('zhen')">☳ Zhen</button>
+            <button class="yin-btn button5" onclick="selectTrigram('xun')">☴ Xun</button>
+            <button class="yin-btn button6" onclick="selectTrigram('kan')">☵ Kan</button>
+            <button class="yin-btn button7" onclick="selectTrigram('gen')">☶ Gen</button>
+            <button class="yin-btn button8" onclick="selectTrigram('kun')">☷ Kun</button>
+        </div>
+    </div>
+    <div id="hexagram-name"></div>
+</body>
+</html>
