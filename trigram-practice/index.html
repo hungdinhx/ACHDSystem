@@ -55,19 +55,31 @@
             flex-direction: column;
             gap: 10px;
         }
+   
         button {
-            font-size: 40px;
-            width: 80px;
-            height: 80px;
-            border: none;
-            border-radius: 10px;
-            background-color: #3498db;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
+    font-size: 60px; /* Bigger symbols */
+    width: 80px;
+    height: 80px;
+    border: none;
+    border-radius: 10px;
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+
+    display: flex; /* Enables better centering */
+    align-items: center; /* Vertical centering */
+    justify-content: center; /* Horizontal centering */
+    text-align: center;
+
+    line-height: 1; /* Prevents extra spacing issues */
+    
+    padding: 0; /* Removes extra padding that might shift the text */
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
     </style>
     <script>
         const SHEET_API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
