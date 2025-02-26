@@ -94,10 +94,11 @@
       margin-top: 20px;
     }
 
-    #lesson-select {
-      margin-bottom: 20px;
+    select {
+      margin-bottom: 10px;
       padding: 10px;
       font-size: 16px;
+      width: 100%;
     }
   </style>
 </head>
@@ -105,9 +106,10 @@
 
   <div class="game-container">
     <h1>Vocabulary Matching Game</h1>
-    <select id="lesson-select">
-      <option value="all">All Lessons</option>
-    </select>
+    
+    <select id="sheet-select"></select>
+    <select id="lesson-select"></select>
+    
     <div id="timer">Time: 0:00</div>
 
     <div id="game-board" class="game-board"></div>
@@ -120,50 +122,157 @@
   <script>
     const SHEET_ID = '11oATdxVyq6RNc7soQtxAbCcP6gce5fSEqH0RYcBD84s';
     const API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
-    const SHEET_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1?key=${API_KEY}`;
+    const SHEETS_METADATA_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?key=${API_KEY}`;
 
     let vocabulary = [];
-    let selectedButton = null;
-    let matchedPairs = 0;
-    let totalPairs = 0;
-
+    let selectedSheet = "Sheet1";
     const gameBoard = document.getElementById('game-board');
     const resetButton = document.getElementById('reset-button');
     const winnerMessage = document.getElementById('winner-message');
+    const sheetSelect = document.getElementById('sheet-select');
     const lessonSelect = document.getElementById('lesson-select');
 
-    function startGame(selectedLesson) {
-      matchedPairs = 0;
-      gameBoard.innerHTML = '';
-      selectedButton = null;
-      winnerMessage.style.display = 'none';
+    async function fetchSheetNames() {
+      try {
+        const response = await fetch(SHEETS_METADATA_URL);
+        const data = await response.json();
 
-      let filteredWords = selectedLesson === "all" 
-        ? vocabulary 
-        : vocabulary.filter(word => word.lesson === selectedLesson);
+        if (!data.sheets) {
+          console.error("No sheets found.");
+          return;
+        }
 
-      if (filteredWords.length === 0) {
-        gameBoard.innerHTML = '<p>No words available for this lesson.</p>';
-        return;
+        sheetSelect.innerHTML = "";
+
+        data.sheets.forEach(sheet => {
+          const sheetName = sheet.properties.title;
+          const option = document.createElement('option');
+          option.value = sheetName;
+          option.textContent = sheetName;
+          sheetSelect.appendChild(option);
+        });
+
+        selectedSheet = sheetSelect.value;
+        fetchVocabulary(selectedSheet);
+      } catch (error) {
+        console.error("Error fetching sheet names:", error);
       }
-
-      const selectedWords = filteredWords.slice(0, 10);
-      totalPairs = selectedWords.length;
-
-      const allButtons = [];
-
-      selectedWords.forEach(word => {
-        allButtons.push(createButton(word, 'english'));
-        allButtons.push(createButton(word, 'chinese'));
-      });
-
-      allButtons.sort(() => Math.random() - 0.5);
-      allButtons.forEach(button => gameBoard.appendChild(button));
     }
 
-    function buttonClicked(button, word, type) {
-      if (selectedButton && selectedButton.button === button) return;
+    async function fetchVocabulary(sheetName) {
+      const SHEET_DATA_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+      
+      try {
+        const response = await fetch(SHEET_DATA_URL);
+        const data = await response.json();
 
+        if (!data.values || data.values.length < 2) {
+          console.error("No data found in the sheet.");
+          return;
+        }
+
+        vocabulary = data.values.slice(1).map((row, index) => ({
+          id: index + 1,
+          english: row[0],
+          chinese: row[1],
+          lesson: row[2] || "Uncategorized",
+        }));
+
+        populateLessonsDropdown();
+        startGame(lessonSelect.value);
+      } catch (error) {
+        console.error("Error fetching vocabulary:", error);
+      }
+    }
+
+    function populateLessonsDropdown() {
+  const uniqueLessons = [...new Set(vocabulary.map(word => word.lesson))];
+
+  lessonSelect.innerHTML = '';
+
+  uniqueLessons.forEach(lesson => {
+    const option = document.createElement('option');
+    option.value = lesson;
+    option.textContent = lesson;
+    lessonSelect.appendChild(option);
+  });
+
+  // Move "All Lessons" to the bottom
+  const allLessonsOption = document.createElement('option');
+  allLessonsOption.value = "all";
+  allLessonsOption.textContent = "All Lessons";
+  lessonSelect.appendChild(allLessonsOption);
+}
+
+    function createButton(word, type) {
+      const button = document.createElement('button');
+      button.textContent = type === 'english' ? word.english : word.chinese;
+      button.onclick = () => {
+        buttonClicked(button, word, type);
+      };
+      return button;
+    }
+
+    function startGame(selectedLesson) {
+  const { bgColor, primaryColor, accentColor, textColor } = generateColorScheme();
+
+  // Apply colors to the page
+  document.body.style.backgroundColor = bgColor;
+  document.body.style.color = textColor;
+  document.querySelector(".game-container").style.backgroundColor = bgColor;
+
+  gameBoard.innerHTML = '';
+  winnerMessage.style.display = 'none';
+
+  let filteredWords;
+
+  if (selectedLesson === "all") {
+    filteredWords = vocabulary.sort(() => Math.random() - 0.5).slice(0, 10);
+  } else {
+    filteredWords = vocabulary.filter(word => word.lesson === selectedLesson);
+  }
+
+  if (filteredWords.length === 0) {
+    gameBoard.innerHTML = '<p>No words available for this lesson.</p>';
+    return;
+  }
+
+  const allButtons = [];
+
+  filteredWords.forEach(word => {
+    const button = createButton(word, 'english');
+    const contrastColor = getContrastColor(primaryColor);
+    button.style.backgroundColor = primaryColor;
+    button.style.color = contrastColor;
+    allButtons.push(button);
+
+    const button2 = createButton(word, 'chinese');
+    button2.style.backgroundColor = primaryColor;
+    button2.style.color = contrastColor;
+    allButtons.push(button2);
+  });
+
+  allButtons.sort(() => Math.random() - 0.5);
+  allButtons.forEach(button => gameBoard.appendChild(button));
+
+  // Change button hover and selected styles dynamically
+  document.querySelectorAll("button").forEach(button => {
+    button.addEventListener("mouseenter", () => {
+      button.style.backgroundColor = accentColor;
+      button.style.color = getContrastColor(accentColor);
+    });
+    button.addEventListener("mouseleave", () => {
+      button.style.backgroundColor = primaryColor;
+      button.style.color = getContrastColor(primaryColor);
+    });
+  });
+
+  resetButton.style.backgroundColor = accentColor;
+  resetButton.style.color = getContrastColor(accentColor);
+}
+
+
+    function buttonClicked(button, word, type) {
       if (!selectedButton) {
         selectedButton = { button, word, type };
         button.classList.add('selected');
@@ -171,13 +280,11 @@
       }
 
       if (selectedButton.word.id === word.id && selectedButton.type !== type) {
-        matchedPairs++;
         setTimeout(() => {
           selectedButton.button.remove();
           button.remove();
           selectedButton = null;
-
-          if (matchedPairs === totalPairs) {
+          if (gameBoard.children.length === 0) {
             winnerMessage.style.display = 'block';
           }
         }, 300);
@@ -189,10 +296,63 @@
         }, 500);
       }
     }
+    function generateColorScheme() {
+  const hue = Math.floor(Math.random() * 360);
+
+  const bgColor = `hsl(${hue}, 60%, 90%)`; // Light background
+  const primaryColor = `hsl(${(hue + 30) % 360}, 80%, 60%)`; // Main button color
+  const accentColor = `hsl(${(hue + 60) % 360}, 80%, 40%)`; // Highlighted button color
+  const textColor = `hsl(${(hue + 180) % 360}, 30%, 20%)`; // Dark text for contrast
+
+  return { bgColor, primaryColor, accentColor, textColor };
+}
+function getContrastColor(hexColor) {
+  // Convert HSL color to RGB first
+  let rgb = hslToRgb(hexColor);
+
+  // Calculate luminance
+  let luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+
+  // Return white or black based on luminance
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+}
+
+// Convert HSL color string to RGB array
+function hslToRgb(hslColor) {
+  let hslMatch = hslColor.match(/hsl\((\d+), (\d+)%, (\d+)%\)/);
+  if (!hslMatch) return [0, 0, 0]; // Default to black if error
+
+  let h = parseInt(hslMatch[1]);
+  let s = parseInt(hslMatch[2]) / 100;
+  let l = parseInt(hslMatch[3]) / 100;
+
+  let c = (1 - Math.abs(2 * l - 1)) * s;
+  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  let m = l - c / 2;
+
+  let r, g, b;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255].map(Math.round);
+}
+
+    sheetSelect.addEventListener('change', () => {
+      selectedSheet = sheetSelect.value;
+      fetchVocabulary(selectedSheet);
+    });
+
+    lessonSelect.addEventListener('change', () => {
+      startGame(lessonSelect.value);
+    });
 
     resetButton.addEventListener('click', () => startGame(lessonSelect.value));
-    lessonSelect.addEventListener('change', () => startGame(lessonSelect.value));
 
+    fetchSheetNames();
   </script>
 </body>
 </html>
