@@ -132,6 +132,37 @@
     const sheetSelect = document.getElementById('sheet-select');
     const lessonSelect = document.getElementById('lesson-select');
 
+    function speakText(text, lang) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  let availableVoices = speechSynthesis.getVoices();
+
+  if (lang === 'zh-CN') {
+    let chineseVoice = availableVoices.find(voice => 
+      voice.lang.startsWith('zh') || voice.name.includes('Chinese')
+    );
+    if (chineseVoice) {
+      utterance.voice = chineseVoice;
+    } else {
+      console.warn("Chinese voice not available on this device.");
+    }
+  } else {
+    let englishVoice = availableVoices.find(voice => 
+      voice.lang.startsWith('en') 
+    );
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+  }
+
+  speechSynthesis.speak(utterance);
+}
+
+// Ensure voices load properly on iOS
+speechSynthesis.onvoiceschanged = () => {
+  console.log("Voices loaded:", speechSynthesis.getVoices());
+};
+
+
     async function fetchSheetNames() {
       try {
         const response = await fetch(SHEETS_METADATA_URL);
@@ -204,14 +235,19 @@
   lessonSelect.appendChild(allLessonsOption);
 }
 
-    function createButton(word, type) {
-      const button = document.createElement('button');
-      button.textContent = type === 'english' ? word.english : word.chinese;
-      button.onclick = () => {
-        buttonClicked(button, word, type);
-      };
-      return button;
-    }
+function createButton(word, type) {
+  const button = document.createElement('button');
+  button.textContent = type === 'english' ? word.english : word.chinese;
+  
+  // Single event listener that handles both speaking and selection
+  button.addEventListener("click", () => {
+    speakText(button.textContent, type === 'english' ? 'en-US' : 'zh-CN');
+    buttonClicked(button, word, type);
+  });
+
+  return button;
+}
+
 
     function startGame(selectedLesson) {
   const { bgColor, primaryColor, accentColor, textColor } = generateColorScheme();
@@ -271,31 +307,54 @@
   resetButton.style.color = getContrastColor(accentColor);
 }
 
+let selectedButton = null; // Track selected button
 
-    function buttonClicked(button, word, type) {
-      if (!selectedButton) {
-        selectedButton = { button, word, type };
-        button.classList.add('selected');
-        return;
-      }
+function buttonClicked(button, word, type) {
+  if (selectedButton === button) return; // Prevent selecting the same button twice
 
-      if (selectedButton.word.id === word.id && selectedButton.type !== type) {
-        setTimeout(() => {
-          selectedButton.button.remove();
-          button.remove();
-          selectedButton = null;
-          if (gameBoard.children.length === 0) {
-            winnerMessage.style.display = 'block';
-          }
-        }, 300);
-      } else {
-        setTimeout(() => {
-          selectedButton.button.classList.remove('selected');
-          button.classList.remove('selected');
-          selectedButton = null;
-        }, 500);
-      }
-    }
+  if (!selectedButton) {
+    // First button selection
+    selectedButton = { button, word, type };
+    button.classList.add('selected');
+    return;
+  }
+
+  if (selectedButton.word.id === word.id && selectedButton.type !== type) {
+    // Match found: Remove both buttons
+    setTimeout(() => {
+      selectedButton.button.remove();
+      button.remove();
+      selectedButton = null;
+      checkWinCondition();
+    }, 300);
+  } else {
+    // No match: Reset selection
+    setTimeout(() => {
+      selectedButton.button.classList.remove('selected');
+      button.classList.remove('selected');
+      selectedButton = null;
+    }, 500);
+  }
+}
+
+// Ensure proper button creation
+function createButton(word, type) {
+  const button = document.createElement('button');
+  button.textContent = type === 'english' ? word.english : word.chinese;
+  button.onclick = () => {
+    speakText(button.textContent, type === 'english' ? 'en-US' : 'zh-CN');
+    buttonClicked(button, word, type);
+  };
+  return button;
+}
+
+// Check for game completion
+function checkWinCondition() {
+  if (document.querySelectorAll('#game-board button').length === 0) {
+    winnerMessage.style.display = 'block';
+  }
+}
+
     function generateColorScheme() {
   const hue = Math.floor(Math.random() * 360);
 
