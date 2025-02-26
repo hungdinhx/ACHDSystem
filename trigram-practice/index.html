@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexagram Memorizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            color: #333;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        #hexagram-name {
+            font-size: 3em;
+            color: #2980b9;
+            margin: 20px 0;
+        }
+        .counter {
+            font-size: 20px;
+            margin: 20px 0;
+            color: #e74c3c;
+        }
+        .trigram-container {
+    display: flex;
+    flex-direction: column-reverse; /* Makes the second trigram (bottom) appear under the first */
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    width: 150px;
+    border: 2px solid #333;
+    margin: 20px auto;
+    font-size: 80px;
+    background-color: white;
+    padding: 0; /* Remove extra space */
+}
+
+#selected-top, #selected-bottom {
+    line-height: 1; /* Ensures no extra spacing */
+    display: block; /* Ensures trigrams act like stacked elements */
+}
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .button-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        button {
+            font-size: 40px;
+            width: 80px;
+            height: 80px;
+            border: none;
+            border-radius: 10px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+    <script>
+        const SHEET_API_KEY = 'AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ';
+        const SHEET_ID = '1jpF-Ej26NVDnRrBhGYppdI0zrUXv5AW_ZzVAM6dpOYc';
+        const TRIGRAM_TAB = 'trigram';
+        const HEXIGRAM_TAB = 'hexigram';
+        let trigrams = [];
+        let hexagrams = [];
+        let currentHexagram = null;
+        let selectedTop = null;
+        let selectedBottom = null;
+        let correctCount = 0;
+        
+        async function fetchSheetData() {
+            const trigramURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${TRIGRAM_TAB}?key=${SHEET_API_KEY}`;
+            const hexigramURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${HEXIGRAM_TAB}?key=${SHEET_API_KEY}`;
+            
+            const trigramResponse = await fetch(trigramURL);
+            const hexigramResponse = await fetch(hexigramURL);
+            
+            const trigramData = await trigramResponse.json();
+            const hexigramData = await hexigramResponse.json();
+            
+            processTrigramData(trigramData.values);
+            processHexigramData(hexigramData.values);
+            createButtons();
+            loadNewHexagram();
+        }
+
+        function speak(text, lang = "zh-TW") {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+
+    // Ensure it works on Apple devices by using a common voice
+    const voices = speechSynthesis.getVoices();
+    utterance.voice = voices.find(voice => voice.lang === lang) || null;
+
+    speechSynthesis.speak(utterance);
+}
+
+        
+function processTrigramData(data) {
+    trigrams = data.slice(1).map(row => ({
+        symbol: row[0],  // Trigram symbol (⚊, ⚋, etc.)
+        name: row[2],    // Trigram name from Column C
+        number: row[3]   // Trigram number for matching hexagram codes
+    }));
+}
+        
+        function processHexigramData(data) {
+            hexagrams = data.slice(1).map(row => ({ name: row[1], code: row[5] }));
+        }
+        
+        function loadNewHexagram() {
+            const randomHex = hexagrams[Math.floor(Math.random() * hexagrams.length)];
+            currentHexagram = randomHex;
+            document.getElementById("hexagram-name").textContent = randomHex.name;
+            selectedTop = null;
+            selectedBottom = null;
+            updateSelectedTrigrams();
+        }
+
+        function selectTrigram(symbol) {
+    if (!selectedTop) {
+        selectedTop = symbol;
+    } else if (!selectedBottom) {
+        selectedBottom = symbol;
+        updateSelectedTrigrams();
+        setTimeout(checkAnswer, 150); // Delay to ensure it displays before checking
+        return;
+    }
+    updateSelectedTrigrams();
+}
+
+
+        
+        function updateSelectedTrigrams() {
+            document.getElementById("selected-top").textContent = selectedTop || "";
+            document.getElementById("selected-bottom").textContent = selectedBottom || "";
+        }
+        
+
+        function checkAnswer() {
+    const correctTop = trigrams.find(t => t.number === currentHexagram.code[0]);
+    const correctBottom = trigrams.find(t => t.number === currentHexagram.code[1]);
+
+    if (!correctTop || !correctBottom) {
+        alert("Error: Could not find matching trigrams.");
+        return;
+    }
+
+    if (selectedTop === correctTop.symbol && selectedBottom === correctBottom.symbol) {
+        correctCount++;
+        document.getElementById("counter").textContent = `Correct Streak: ${correctCount}`;
+        
+        // Speak the correct answer: top trigram name + bottom trigram name + hexagram name
+        const phrase = `${correctTop.name} ${correctBottom.name} ${currentHexagram.name}`;
+        speak(phrase);
+
+        // Move to next hexagram after speech finishes
+        setTimeout(loadNewHexagram, 2000);
+    } else {
+        // Speak incorrect message
+        speak("不對，再試一次。");
+        correctCount = 0;
+        document.getElementById("counter").textContent = `Correct Streak: ${correctCount}`;
+        selectedTop = null;
+        selectedBottom = null;
+        updateSelectedTrigrams();
+    }
+}
+
+
+
+        function createButtons() {
+            const leftColumn = document.getElementById("left-buttons");
+            const rightColumn = document.getElementById("right-buttons");
+            leftColumn.innerHTML = "";
+            rightColumn.innerHTML = "";
+            
+            trigrams.slice(0, 4).forEach(trigram => {
+                const button = document.createElement("button");
+                button.textContent = trigram.symbol;
+                button.onclick = () => selectTrigram(trigram.symbol);
+                leftColumn.appendChild(button);
+            });
+            
+            trigrams.slice(4, 8).forEach(trigram => {
+                const button = document.createElement("button");
+                button.textContent = trigram.symbol;
+                button.onclick = () => selectTrigram(trigram.symbol);
+                rightColumn.appendChild(button);
+            });
+        }
+        
+        document.addEventListener("DOMContentLoaded", fetchSheetData);
+    </script>
+</head>
+<body>
+    <h1>Hexagram Memorizer</h1>
+    <h2 id="hexagram-name">Loading...</h2>
+    <div class="counter" id="counter">Correct Streak: 0</div>
+    <div class="button-container">
+        <div class="button-column" id="left-buttons"></div>
+        <div class="trigram-container">
+            <div id="selected-top"></div>
+            <div id="selected-bottom"></div>
+        </div>        
+        <div class="button-column" id="right-buttons"></div>
+    </div>
+</body>
+</html>
