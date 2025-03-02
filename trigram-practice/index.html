@@ -65,14 +65,11 @@
     background-color: #3498db;
     color: white;
     cursor: pointer;
-
     display: flex; /* Enables better centering */
     align-items: center; /* Vertical centering */
     justify-content: center; /* Horizontal centering */
     text-align: center;
-
     line-height: 1; /* Prevents extra spacing issues */
-    
     padding: 0; /* Removes extra padding that might shift the text */
 }
 
@@ -93,7 +90,6 @@ button:hover {
         let selectedBottom = null;
         let correctCount = 0;
 
-
         function speak(text, lang = "zh-TW") {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
@@ -105,7 +101,6 @@ button:hover {
     speechSynthesis.speak(utterance);
 }
 
-        
         async function fetchSheetData() {
             const trigramURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${TRIGRAM_TAB}?key=${SHEET_API_KEY}`;
             const hexigramURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${HEXIGRAM_TAB}?key=${SHEET_API_KEY}`;
@@ -159,15 +154,12 @@ function processTrigramData(data) {
     }
     updateSelectedTrigrams();
 }
-
-
         
         function updateSelectedTrigrams() {
             document.getElementById("selected-top").textContent = selectedTop || "";
             document.getElementById("selected-bottom").textContent = selectedBottom || "";
         }
         
-
         function checkAnswer() {
     const correctTop = trigrams.find(t => t.number === currentHexagram.code[0]);
     const correctBottom = trigrams.find(t => t.number === currentHexagram.code[1]);
@@ -199,8 +191,6 @@ function processTrigramData(data) {
         }, 3000); // Delay of 2 seconds (2000 milliseconds)
     }
 }
-
-
 
         function createButtons() {
             const leftColumn = document.getElementById("left-buttons");
