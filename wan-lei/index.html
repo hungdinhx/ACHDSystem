@@ -83,10 +83,19 @@
         }
 
         function speak(text, lang = "zh-CN") {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            speechSynthesis.speak(utterance);
-        }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+
+    // Explicitly set a Chinese voice if available
+    const voices = speechSynthesis.getVoices();
+    const chineseVoices = voices.filter(voice => voice.lang.startsWith("zh"));
+    
+    if (chineseVoices.length > 0) {
+        utterance.voice = chineseVoices[0]; // Select the first available Chinese voice
+    }
+
+    speechSynthesis.speak(utterance);
+}
 
         function checkAnswer(userAnswer) {
             speak(userAnswer, "zh-CN");
