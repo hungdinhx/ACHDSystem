@@ -89,19 +89,25 @@
         }
 
         function checkAnswer(userAnswer) {
-            speak(userAnswer, "zh-CN");
+            speak(userAnswer, "zh-CN"); // Speak user's selection in Chinese
             if (correctHexagrams.includes(userAnswer)) {
-                speak(`${userAnswer} corresponds with ${currentWord}`, "en-US");
+                speak(`corresponds with ${currentWord}`, "en-US");
                 score++;
-                getRandomWord();
-                updateUI();
+                setTimeout(() => {
+                    getRandomWord();
+                    updateUI();
+                }, 2000); // 2-second delay before next round
             } else {
                 attempts--;
                 if (attempts === 0) {
-                    speak(`Wrong answer! The correct answer is ${correctHexagrams.join(", ")}`, "en-US");
+                    let correctAnswer = correctHexagrams[0];
+                    speak("Wrong answer! The correct answer is", "en-US");
+                    speak(correctAnswer, "zh-CN"); // Speak correct answer in Chinese
                     score = 0;
-                    getRandomWord();
-                    updateUI();
+                    setTimeout(() => {
+                        getRandomWord();
+                        updateUI();
+                    }, 2000); // 2-second delay before next round
                 } else {
                     speak("Wrong answer! You have one more attempt.", "en-US");
                 }
