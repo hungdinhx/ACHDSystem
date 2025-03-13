@@ -86,17 +86,24 @@
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
 
-    // Explicitly set a Chinese voice if available
+    // Get available voices
     const voices = speechSynthesis.getVoices();
-    const chineseVoices = voices.filter(voice => voice.lang.startsWith("zh"));
-    
-    if (chineseVoices.length > 0) {
-        utterance.voice = chineseVoices[0]; // Select the first available Chinese voice
+
+    // Choose voice based on language
+    if (lang.startsWith("zh")) {
+        const chineseVoices = voices.filter(voice => voice.lang.startsWith("zh"));
+        if (chineseVoices.length > 0) {
+            utterance.voice = chineseVoices[0]; // Use first available Chinese voice
+        }
+    } else if (lang.startsWith("en")) {
+        const englishVoices = voices.filter(voice => voice.lang.startsWith("en"));
+        if (englishVoices.length > 0) {
+            utterance.voice = englishVoices[0]; // Use first available English voice
+        }
     }
 
     speechSynthesis.speak(utterance);
 }
-
         function checkAnswer(userAnswer) {
             speak(userAnswer, "zh-CN");
             if (correctHexagrams.includes(userAnswer)) {
