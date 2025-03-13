@@ -35,7 +35,7 @@
             cursor: pointer;
             border-radius: 5px;
             flex: 1 1 45%;
-            transition: background-color 0.5s ease;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
     </style>
 </head>
@@ -82,32 +82,32 @@
             changeAppearance();
         }
 
-        function speak(text, lang = "en-US") {
+        function speak(text, lang = "zh-CN") {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = lang;
             speechSynthesis.speak(utterance);
         }
 
         function checkAnswer(userAnswer) {
-            speak(userAnswer, "zh-TW"); // Speak user's selection in Chinese
+            speak(userAnswer, "zh-CN");
             if (correctHexagrams.includes(userAnswer)) {
                 speak(`corresponds with ${currentWord}`, "en-US");
                 score++;
                 setTimeout(() => {
                     getRandomWord();
                     updateUI();
-                }, 2000); // 2-second delay before next round
+                }, 2000);
             } else {
                 attempts--;
                 if (attempts === 0) {
                     let correctAnswer = correctHexagrams[0];
                     speak("Wrong answer! The correct answer is", "en-US");
-                    speak(correctAnswer, "zh-TW"); // Speak correct answer in Chinese
+                    speak(correctAnswer, "zh-CN");
                     score = 0;
                     setTimeout(() => {
                         getRandomWord();
                         updateUI();
-                    }, 2000); // 2-second delay before next round
+                    }, 2000);
                 } else {
                     speak("Wrong answer! You have one more attempt.", "en-US");
                 }
@@ -121,18 +121,26 @@
 
         function changeAppearance() {
             const colorSchemes = [
-                { bg: "#ffebcc", text: "#5c3d00", btn: "#ff9800", font: "'Courier New', monospace" },
-                { bg: "#cceeff", text: "#003366", btn: "#007bff", font: "'Verdana', sans-serif" },
-                { bg: "#e6ffe6", text: "#004d00", btn: "#4caf50", font: "'Georgia', serif" },
-                { bg: "#ffe6f2", text: "#660033", btn: "#ff4081", font: "'Tahoma', sans-serif" }
+                { bg: "#ffebcc", text: "#5c3d00", btn: "#ff9800" },
+                { bg: "#cceeff", text: "#003366", btn: "#007bff" },
+                { bg: "#e6ffe6", text: "#004d00", btn: "#4caf50" },
+                { bg: "#ffe6f2", text: "#660033", btn: "#ff4081" }
             ];
             const scheme = colorSchemes[Math.floor(Math.random() * colorSchemes.length)];
             document.body.style.backgroundColor = scheme.bg;
             document.body.style.color = scheme.text;
-            document.body.style.fontFamily = scheme.font;
             document.querySelectorAll("button").forEach(button => {
                 button.style.backgroundColor = scheme.btn;
+                button.style.color = (getLuminance(scheme.btn) < 0.5) ? "white" : "black";
             });
+        }
+
+        function getLuminance(hex) {
+            hex = hex.replace("#", "");
+            const r = parseInt(hex.substring(0,2), 16) / 255;
+            const g = parseInt(hex.substring(2,4), 16) / 255;
+            const b = parseInt(hex.substring(4,6), 16) / 255;
+            return (0.299 * r + 0.587 * g + 0.114 * b);
         }
 
         window.onload = function() {
