@@ -89,7 +89,7 @@
         }
 
         function checkAnswer(userAnswer) {
-            speak(userAnswer, "zh-CN"); // Speak user's selection in Chinese
+            speak(userAnswer, "zh-TW"); // Speak user's selection in Chinese
             if (correctHexagrams.includes(userAnswer)) {
                 speak(`corresponds with ${currentWord}`, "en-US");
                 score++;
