@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexagram Quiz Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+            transition: background-color 0.5s ease, font-family 0.5s ease;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            width: 90%;
+            max-width: 400px;
+        }
+        .hexagram-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            border: none;
+            padding: 15px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            flex: 1 1 45%;
+            transition: background-color 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hexagram Quiz Game</h1>
+        <p id="word">Word: </p>
+        <div class="hexagram-buttons">
+            <button onclick="checkAnswer('乾卦')">乾卦</button>
+            <button onclick="checkAnswer('坤卦')">坤卦</button>
+            <button onclick="checkAnswer('震卦')">震卦</button>
+            <button onclick="checkAnswer('巽卦')">巽卦</button>
+            <button onclick="checkAnswer('坎卦')">坎卦</button>
+            <button onclick="checkAnswer('离卦')">离卦</button>
+            <button onclick="checkAnswer('艮卦')">艮卦</button>
+            <button onclick="checkAnswer('兑卦')">兑卦</button>
+        </div>
+        <p id="score">Score: 0</p>
+    </div>
+    <script>
+        const hexagramData = {
+            "乾卦": ["Heaven", "Gold", "Father", "Strong", "Horse"],
+            "坤卦": ["Earth", "Soil", "Mother", "Nurturing", "Cow"],
+            "震卦": ["Thunder", "Dragon", "Eldest Son", "Movement", "Snake"],
+            "巽卦": ["Wind", "Wood", "Eldest Daughter", "Gentle", "Chicken"],
+            "坎卦": ["Water", "Moon", "Middle Son", "Danger", "Fish"],
+            "离卦": ["Fire", "Sun", "Middle Daughter", "Brightness", "Pheasant"],
+            "艮卦": ["Mountain", "Stillness", "Youngest Son", "Steady", "Dog"],
+            "兑卦": ["Lake", "Joy", "Youngest Daughter", "Pleasure", "Sheep"]
+        };
+
+        let currentWord = "";
+        let correctHexagrams = [];
+        let score = 0;
+        let attempts = 2;
+
+        function getRandomWord() {
+            const hexagramNames = Object.keys(hexagramData);
+            const randomHexagram = hexagramNames[Math.floor(Math.random() * hexagramNames.length)];
+            const words = hexagramData[randomHexagram];
+            currentWord = words[Math.floor(Math.random() * words.length)];
+            correctHexagrams = hexagramNames.filter(hex => hexagramData[hex].includes(currentWord));
+            attempts = 2;
+            changeAppearance();
+        }
+
+        function speak(text, lang = "en-US") {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            speechSynthesis.speak(utterance);
+        }
+
+        function checkAnswer(userAnswer) {
+            speak(userAnswer, "zh-CN");
+            if (correctHexagrams.includes(userAnswer)) {
+                speak(`${userAnswer} corresponds with ${currentWord}`, "en-US");
+                score++;
+                getRandomWord();
+                updateUI();
+            } else {
+                attempts--;
+                if (attempts === 0) {
+                    speak(`Wrong answer! The correct answer is ${correctHexagrams.join(", ")}`, "en-US");
+                    score = 0;
+                    getRandomWord();
+                    updateUI();
+                } else {
+                    speak("Wrong answer! You have one more attempt.", "en-US");
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById("word").innerText = `Word: ${currentWord}`;
+            document.getElementById("score").innerText = `Score: ${score}`;
+        }
+
+        function changeAppearance() {
+            const colorSchemes = [
+                { bg: "#ffebcc", text: "#5c3d00", btn: "#ff9800", font: "'Courier New', monospace" },
+                { bg: "#cceeff", text: "#003366", btn: "#007bff", font: "'Verdana', sans-serif" },
+                { bg: "#e6ffe6", text: "#004d00", btn: "#4caf50", font: "'Georgia', serif" },
+                { bg: "#ffe6f2", text: "#660033", btn: "#ff4081", font: "'Tahoma', sans-serif" }
+            ];
+            const scheme = colorSchemes[Math.floor(Math.random() * colorSchemes.length)];
+            document.body.style.backgroundColor = scheme.bg;
+            document.body.style.color = scheme.text;
+            document.body.style.fontFamily = scheme.font;
+            document.querySelectorAll("button").forEach(button => {
+                button.style.backgroundColor = scheme.btn;
+            });
+        }
+
+        window.onload = function() {
+            getRandomWord();
+            updateUI();
+        };
+    </script>
+</body>
+</html>
