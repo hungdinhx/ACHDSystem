@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCQ WebApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.5s ease;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .progress {
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        button, select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        select {
+            width: auto;
+            max-width: 90%;
+            min-width: 150px;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <select id="sheetTabs" onchange="fetchQuestions(this.value)"></select>
+    <div class="container">
+        <div class="progress" id="progress">Loading...</div>
+        <h2 id="question">Loading...</h2>
+        <div id="options"></div>
+        <p id="feedback"></p>
+        <div id="results" style="display: none;"></div>
+    </div>
+    <script>
+        const SHEET_ID = "1Hrce9RVxfWalrtVmEWyk6b-rdK4DQOJhWoHFGJfmO2E";
+        const SHEET_API_KEY = "AIzaSyDiQ2Dc8GehVZwPJwu-XZX5ixQSzh5d3kQ";
+        let questions = [];
+        let currentQuestion = 0;
+        let correctAnswers = 0;
+        let incorrectQuestions = [];
+        
+        function getRandomColor() {
+            const colors = ["#FF6F61", "#6B5B95", "#88B04B", "#92A8D1", "#F7CAC9"];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        function getContrastColor(hex) {
+            hex = hex.replace("#", "");
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? "black" : "white";
+        }
+        
+        function updateProgress() {
+            document.getElementById("progress").textContent = `${currentQuestion + 1}/${questions.length}`;
+        }
+        
+        function loadQuestion() {
+            if (currentQuestion >= questions.length) {
+                showResults();
+                return;
+            }
+            updateProgress();
+            const q = questions[currentQuestion];
+            document.getElementById("question").textContent = q.question;
+            const bgColor = getRandomColor();
+            document.body.style.backgroundColor = bgColor;
+            const buttonColor = getRandomColor();
+            const textColor = getContrastColor(buttonColor);
+            const optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            
+            let shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+            shuffledOptions.forEach(option => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.style.backgroundColor = buttonColor;
+                button.style.color = textColor;
+                button.onclick = () => checkAnswer(option, q);
+                optionsDiv.appendChild(button);
+            });
+        }
+        
+        function checkAnswer(selected, q) {
+            if (selected === q.answer) {
+                correctAnswers++;
+            } else {
+                incorrectQuestions.push({ question: q.question, correctAnswer: q.answer });
+            }
+            currentQuestion++;
+            loadQuestion();
+        }
+        
+        function showResults() {
+            const percentage = (correctAnswers / questions.length) * 100;
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.style.display = "block";
+            resultsDiv.innerHTML = `<h3>You got ${percentage.toFixed(2)}% correct!</h3>`;
+            
+            if (incorrectQuestions.length > 0) {
+                resultsDiv.innerHTML += `<h4>Review incorrect answers:</h4>`;
+                incorrectQuestions.forEach(q => {
+                    resultsDiv.innerHTML += `<p><strong>${q.question}</strong><br>Correct Answer: ${q.correctAnswer}</p>`;
+                });
+            }
+            document.getElementById("question").style.display = "none";
+            document.getElementById("options").style.display = "none";
+            document.getElementById("progress").style.display = "none";
+        }
+        
+        function fetchSheetTabs() {
+            fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?key=${SHEET_API_KEY}`)
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById("sheetTabs");
+                    data.sheets.forEach(sheet => {
+                        const option = document.createElement("option");
+                        option.value = sheet.properties.title;
+                        option.textContent = sheet.properties.title;
+                        select.appendChild(option);
+                    });
+                    fetchQuestions(select.value);
+                })
+                .catch(error => console.error("Error fetching sheet tabs:", error));
+        }
+        
+        function fetchQuestions(sheetName) {
+            fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}?key=${SHEET_API_KEY}`)
+                .then(response => response.json())
+                .then(data => {
+                    const rows = data.values.slice(1);
+                    questions = rows.map(row => ({
+                        question: row[0],
+                        options: row.slice(1, 5),
+                        answer: row[1]
+                    }));
+                    questions = questions.sort(() => Math.random() - 0.5);
+                    currentQuestion = 0;
+                    correctAnswers = 0;
+                    incorrectQuestions = [];
+                    loadQuestion();
+                })
+                .catch(error => console.error("Error fetching questions:", error));
+        }
+        
+        fetchSheetTabs();
+    </script>
+</body>
+</html>
