@@ -5,43 +5,90 @@
   <title>Ba Zi Earthly Branches Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { background: #f5f5f5; font-family: system-ui,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; min-height:100vh; }
-    .container { background: #fff; border-radius: 18px; margin-top: 36px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 18px 8px 10px 8px; max-width:410px; width:98vw; min-height:375px; display:flex; flex-direction:column; align-items:center; }
-    h2 { margin-bottom: .8em; letter-spacing:1px; color:#244; font-size:1.2em;}
-    .question { font-size:1.13em; margin: 16px 0 12px 0; text-align:center;}
-    .options { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:12px;}
+    html, body { height: 100%; margin: 0; padding: 0;}
+    body {
+      background: #f5f5f5;
+      font-family: system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .container {
+      background: #fff;
+      border-radius: 16px;
+      margin-top: 24px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      padding: 10px 4px 6px 4px;
+      max-width: 410px;
+      width: 99vw;
+      min-height: 330px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2 {
+      margin-bottom: 0.3em;
+      letter-spacing: 1px;
+      color: #244;
+      font-size: 1.1em;
+    }
+    .question {
+      font-size: 1.18em;
+      margin: 10px 0 6px 0;
+      text-align: center;
+      min-height: 38px;
+    }
+    .options {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 6px;
+      margin-top: 2px;
+      justify-items: center;
+      align-items: center;
+    }
     .option {
       background: #f1f3f8;
-      border:none;
-      border-radius: 12px;
-      font-size:2.1em;
-      font-weight:bold;
-      min-width:64px;
-      min-height:64px;
+      border: none;
+      border-radius: 9px;
+      font-size: 2.1em;
+      font-weight: bold;
+      min-width: 42px;
+      min-height: 42px;
       aspect-ratio: 1/1;
-      cursor:pointer;
-      transition:background .2s,transform .15s;
-      box-shadow:0 1px 3px rgba(0,0,0,0.04);
+      cursor: pointer;
+      transition: background .17s,transform .13s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.035);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       user-select: none;
+      line-height: 1.1;
     }
-    .option.correct { background: #a7e3b1;}
-    .option.wrong { background: #ffb8b8;}
-    .option.selected { border:2.5px solid #0078ff; }
-    .option:disabled { opacity:.67; }
-    .score, .timer { color:#355; font-size:.97em; margin-bottom:8px;}
-    .controls { margin-bottom:18px;}
-    .btn { background:#3b82f6; color:white; border:none; border-radius:10px; padding:8px 18px; font-size:1em; margin:0 7px 0 0; cursor:pointer;}
-    .btn:active { background:#1855b6;}
-    .hide { display:none;}
-    .summary { text-align:center; margin-top:25px; }
-    @media (max-width:420px){
-      .container{padding:8px 2px 6px 2px;}
-      .options { gap:9px;}
-      .option { min-width:44px; min-height:44px; font-size:1.4em;}
+    .option.correct { background: #a7e3b1; }
+    .option.wrong { background: #ffb8b8; }
+    .option.selected { border: 2px solid #0078ff; }
+    .option:disabled { opacity: .63; }
+    .score, .timer { color: #355; font-size: 1em; margin-bottom: 6px;}
+    .controls { margin-bottom: 15px; }
+    .btn { background: #3b82f6; color: white; border: none; border-radius: 10px; padding: 8px 14px; font-size: .99em; margin:0 6px 0 0; cursor: pointer;}
+    .btn:active { background: #1855b6;}
+    .hide { display: none;}
+    .summary { text-align: center; margin-top: 20px;}
+    @media (max-width:480px) {
+      .container { max-width: 99vw; margin-top: 2vw; padding: 2vw 0 2vw 0;}
+      h2 { font-size: .98em;}
+      .question { font-size: 1.05em;}
+      .options { gap: 5px;}
+      .option { min-width: 30px; min-height: 30px; font-size: 1.4em;}
+    }
+    @media (max-width:350px) {
+      .container {padding:0;}
+      .option {font-size:1em;}
     }
   </style>
 </head>
@@ -61,7 +108,6 @@
     <div class="options hide" id="options"></div>
     <div class="summary hide" id="summary"></div>
   </div>
-
 <script>
 const branches = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 
@@ -89,7 +135,7 @@ let roundQuestions = 10;
 let questions = [];
 let questionIndex = 0;
 let score = 0;
-let timerInterval, timePerQuestion = 15, timeLeft = 0, totalTime = 0, overallStart = 0;
+let timerInterval, elapsed = 0, timerRunning = false;
 
 function shuffle(arr) {
   return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
@@ -179,9 +225,11 @@ function checkSanheAnswer() {
     btn.disabled = true;
   });
   if(correct) score++;
-  document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1}`;
-  clearInterval(timerInterval);
-  setTimeout(nextQuestion, 1100);
+  updateScoreDisplay();
+  setTimeout(()=>{
+    questionIndex++;
+    nextQuestionOrEnd();
+  }, 750);
 }
 
 function selectOption(btn, b) {
@@ -195,9 +243,11 @@ function selectOption(btn, b) {
     option.disabled = true;
   });
   if(correct) score++;
-  document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1}`;
-  clearInterval(timerInterval);
-  setTimeout(nextQuestion, 1100);
+  updateScoreDisplay();
+  setTimeout(()=>{
+    questionIndex++;
+    nextQuestionOrEnd();
+  }, 650);
 }
 
 function startQuiz(n) {
@@ -205,55 +255,58 @@ function startQuiz(n) {
   questions = buildQuestions(n);
   questionIndex = 0;
   score = 0;
-  overallStart = Date.now();
+  elapsed = 0;
   document.getElementById('controls').classList.add('hide');
   document.getElementById('score').classList.remove('hide');
   document.getElementById('timer').classList.remove('hide');
+  document.getElementById('summary').classList.add('hide');
+  document.getElementById('options').classList.remove('hide');
+  document.getElementById('question').classList.remove('hide');
+  updateTimer();
+  updateScoreDisplay();
+  if(timerInterval) clearInterval(timerInterval);
+  timerRunning = true;
+  timerInterval = setInterval(()=>{
+    if(timerRunning) {
+      elapsed++;
+      updateTimer();
+    }
+  },1000);
   nextQuestion();
 }
 
 function nextQuestion() {
   isAnswering = true;
   sanheSelected = [];
-  if(questionIndex >= questions.length) return showSummary();
+  if(questionIndex >= questions.length) {
+    endQuiz();
+    return;
+  }
   let q = questions[questionIndex];
-  document.getElementById('score').textContent = `Score: ${score}/${questionIndex}`;
   document.getElementById('question').innerHTML = questionText(q);
-  document.getElementById('question').classList.remove('hide');
-  document.getElementById('options').classList.remove('hide');
   renderOptions(q);
-  timeLeft = timePerQuestion;
-  updateTimer();
-  clearInterval(timerInterval);
-  timerInterval = setInterval(()=>{
-    timeLeft--;
-    updateTimer();
-    if(timeLeft<=0) {
-      clearInterval(timerInterval);
-      lockOptions(q);
-      setTimeout(nextQuestion, 1100);
-      isAnswering = false;
-    }
-  },1000);
-  questionIndex++;
+}
+
+function nextQuestionOrEnd() {
+  if(questionIndex >= questions.length) {
+    endQuiz();
+  } else {
+    nextQuestion();
+    updateScoreDisplay();
+  }
 }
 
 function updateTimer() {
-  let t = Math.max(0, timeLeft);
-  document.getElementById('timer').innerHTML = `<b>Time:</b> ${t}s`;
+  document.getElementById('timer').innerHTML = `<b>Time:</b> ${elapsed}s`;
 }
 
-function lockOptions(q) {
-  document.querySelectorAll('.option').forEach(btn=>{
-    btn.disabled = true;
-    if(q.type==='sanhe' && q.answer.includes(btn.textContent)) btn.classList.add('correct');
-    if(q.type!=='sanhe' && btn.textContent === q.answer) btn.classList.add('correct');
-  });
+function updateScoreDisplay() {
+  document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1 > questions.length ? questions.length : questionIndex+1}`;
 }
 
-function showSummary() {
-  clearInterval(timerInterval);
-  let t = Math.floor((Date.now()-overallStart)/1000);
+function endQuiz() {
+  timerRunning = false;
+  if(timerInterval) clearInterval(timerInterval);
   document.getElementById('question').classList.add('hide');
   document.getElementById('options').classList.add('hide');
   document.getElementById('score').classList.add('hide');
@@ -262,7 +315,7 @@ function showSummary() {
   document.getElementById('summary').innerHTML = `
     <h3>Quiz Finished!</h3>
     <p>Score: <b>${score} / ${questions.length}</b></p>
-    <p>Total time: <b>${t} seconds</b></p>
+    <p>Total time: <b>${elapsed} seconds</b></p>
     <button class="btn" onclick="resetQuiz()">Try Again</button>
   `;
 }
@@ -271,7 +324,6 @@ function resetQuiz() {
   document.getElementById('summary').classList.add('hide');
   document.getElementById('controls').classList.remove('hide');
 }
-
 </script>
 </body>
 </html>
