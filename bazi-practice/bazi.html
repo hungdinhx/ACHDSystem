@@ -9,19 +9,40 @@
     .container { background: #fff; border-radius: 18px; margin-top: 36px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 18px 8px 10px 8px; max-width:410px; width:98vw; min-height:375px; display:flex; flex-direction:column; align-items:center; }
     h2 { margin-bottom: .8em; letter-spacing:1px; color:#244; font-size:1.2em;}
     .question { font-size:1.13em; margin: 16px 0 12px 0; text-align:center;}
-    .options { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px;}
-    .option { background: #f1f3f8; border:none; border-radius: 10px; font-size:1.06em; padding:14px 4px; cursor:pointer; transition:background .2s; box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+    .options { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:12px;}
+    .option {
+      background: #f1f3f8;
+      border:none;
+      border-radius: 12px;
+      font-size:2.1em;
+      font-weight:bold;
+      min-width:64px;
+      min-height:64px;
+      aspect-ratio: 1/1;
+      cursor:pointer;
+      transition:background .2s,transform .15s;
+      box-shadow:0 1px 3px rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      user-select: none;
+    }
     .option.correct { background: #a7e3b1;}
     .option.wrong { background: #ffb8b8;}
+    .option.selected { border:2.5px solid #0078ff; }
     .option:disabled { opacity:.67; }
     .score, .timer { color:#355; font-size:.97em; margin-bottom:8px;}
     .controls { margin-bottom:18px;}
     .btn { background:#3b82f6; color:white; border:none; border-radius:10px; padding:8px 18px; font-size:1em; margin:0 7px 0 0; cursor:pointer;}
     .btn:active { background:#1855b6;}
-    .next-btn { background: #60b252; margin-top:10px; }
     .hide { display:none;}
     .summary { text-align:center; margin-top:25px; }
-    @media (max-width:420px){.container{padding:8px 2px 6px 2px;}}
+    @media (max-width:420px){
+      .container{padding:8px 2px 6px 2px;}
+      .options { gap:9px;}
+      .option { min-width:44px; min-height:44px; font-size:1.4em;}
+    }
   </style>
 </head>
 <body>
@@ -38,7 +59,6 @@
     <div class="timer hide" id="timer"></div>
     <div class="question hide" id="question"></div>
     <div class="options hide" id="options"></div>
-    <button class="next-btn hide" id="nextBtn" onclick="nextQuestion()">Next</button>
     <div class="summary hide" id="summary"></div>
   </div>
 
@@ -71,27 +91,22 @@ let questionIndex = 0;
 let score = 0;
 let timerInterval, timePerQuestion = 15, timeLeft = 0, totalTime = 0, overallStart = 0;
 
-// Utility for shuffling
 function shuffle(arr) {
   return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
 }
 
-// Generate all possible question types
 function buildQuestions(num) {
   let allQ = [];
-
   // 六合 pairs (both directions)
   liuHe.forEach(([a,b])=>{
     allQ.push({type:'liuhe', base:a, answer:b});
     allQ.push({type:'liuhe', base:b, answer:a});
   });
-
   // 六冲 pairs (both directions)
   liuChong.forEach(([a,b])=>{
     allQ.push({type:'liuchong', base:a, answer:b});
     allQ.push({type:'liuchong', base:b, answer:a});
   });
-
   // 三合 groups (all directions, missing branch)
   sanHe.forEach(group=>{
     group.forEach((base, idx)=>{
@@ -99,14 +114,11 @@ function buildQuestions(num) {
       allQ.push({type:'sanhe', base:base, answer:ans, group});
     });
   });
-
-  // Shuffle and slice to num
   allQ = shuffle(allQ);
   if(num>allQ.length) num = allQ.length;
   return allQ.slice(0,num);
 }
 
-// Question text builder
 function questionText(q) {
   if(q.type==='liuhe') return `What is the <b>六合</b> (Six Harmony) pair for 「${q.base}」?`;
   if(q.type==='liuchong') return `What is the <b>六冲</b> (Six Clash) pair for 「${q.base}」?`;
@@ -116,12 +128,10 @@ function questionText(q) {
   return '';
 }
 
-// Render options
 function renderOptions(q) {
   const optionsDiv = document.getElementById('options');
   optionsDiv.innerHTML = '';
   if(q.type==='sanhe') {
-    // Show all 12 branches, select 2
     branches.forEach(b=>{
       const btn = document.createElement('button');
       btn.textContent = b;
@@ -130,7 +140,6 @@ function renderOptions(q) {
       optionsDiv.appendChild(btn);
     });
   } else {
-    // Show all 12, single pick
     branches.forEach(b=>{
       const btn = document.createElement('button');
       btn.textContent = b;
@@ -141,9 +150,11 @@ function renderOptions(q) {
   }
 }
 
-// For 三合, allow selecting 2
 let sanheSelected = [];
+let isAnswering = true;
+
 function selectSanhe(btn, b) {
+  if(!isAnswering) return;
   if(sanheSelected.includes(b)) {
     btn.classList.remove('selected');
     sanheSelected = sanheSelected.filter(x=>x!==b);
@@ -152,14 +163,15 @@ function selectSanhe(btn, b) {
   if(sanheSelected.length<2) {
     btn.classList.add('selected');
     sanheSelected.push(b);
-    if(sanheSelected.length===2) checkSanheAnswer();
+    if(sanheSelected.length===2) {
+      checkSanheAnswer();
+    }
   }
 }
 
 function checkSanheAnswer() {
   isAnswering = false;
   let q = questions[questionIndex];
-  // Check if selected set equals answer
   let correct = JSON.stringify([...q.answer].sort())===JSON.stringify([...sanheSelected].sort());
   document.querySelectorAll('.option').forEach(btn=>{
     if(q.answer.includes(btn.textContent)) btn.classList.add('correct');
@@ -169,10 +181,9 @@ function checkSanheAnswer() {
   if(correct) score++;
   document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1}`;
   clearInterval(timerInterval);
-  document.getElementById('nextBtn').classList.remove('hide');
+  setTimeout(nextQuestion, 1100);
 }
 
-let isAnswering = true;
 function selectOption(btn, b) {
   if(!isAnswering) return;
   isAnswering = false;
@@ -186,7 +197,7 @@ function selectOption(btn, b) {
   if(correct) score++;
   document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1}`;
   clearInterval(timerInterval);
-  document.getElementById('nextBtn').classList.remove('hide');
+  setTimeout(nextQuestion, 1100);
 }
 
 function startQuiz(n) {
@@ -204,7 +215,6 @@ function startQuiz(n) {
 function nextQuestion() {
   isAnswering = true;
   sanheSelected = [];
-  document.getElementById('nextBtn').classList.add('hide');
   if(questionIndex >= questions.length) return showSummary();
   let q = questions[questionIndex];
   document.getElementById('score').textContent = `Score: ${score}/${questionIndex}`;
@@ -212,7 +222,6 @@ function nextQuestion() {
   document.getElementById('question').classList.remove('hide');
   document.getElementById('options').classList.remove('hide');
   renderOptions(q);
-  // Timer per question
   timeLeft = timePerQuestion;
   updateTimer();
   clearInterval(timerInterval);
@@ -222,10 +231,11 @@ function nextQuestion() {
     if(timeLeft<=0) {
       clearInterval(timerInterval);
       lockOptions(q);
-      document.getElementById('nextBtn').classList.remove('hide');
+      setTimeout(nextQuestion, 1100);
       isAnswering = false;
     }
   },1000);
+  questionIndex++;
 }
 
 function updateTimer() {
@@ -234,7 +244,6 @@ function updateTimer() {
 }
 
 function lockOptions(q) {
-  // Reveal answer if time runs out
   document.querySelectorAll('.option').forEach(btn=>{
     btn.disabled = true;
     if(q.type==='sanhe' && q.answer.includes(btn.textContent)) btn.classList.add('correct');
@@ -242,7 +251,6 @@ function lockOptions(q) {
   });
 }
 
-// Show result summary
 function showSummary() {
   clearInterval(timerInterval);
   let t = Math.floor((Date.now()-overallStart)/1000);
@@ -250,7 +258,6 @@ function showSummary() {
   document.getElementById('options').classList.add('hide');
   document.getElementById('score').classList.add('hide');
   document.getElementById('timer').classList.add('hide');
-  document.getElementById('nextBtn').classList.add('hide');
   document.getElementById('summary').classList.remove('hide');
   document.getElementById('summary').innerHTML = `
     <h3>Quiz Finished!</h3>
