@@ -20,8 +20,8 @@
       border-radius: 14px;
       margin-top: 12px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.07);
-      padding: 8px 2vw 8px 2vw;
-      max-width: 440px;
+      padding: 8px 0 8px 0;
+      max-width: 414px;
       width: 100vw;
       min-height: 300px;
       display: flex;
@@ -42,12 +42,12 @@
       max-width: 99vw;
     }
     .options {
-      width: 99vw;
-      max-width: 410px;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-template-rows: repeat(4, 1fr);
-      gap: 11px;
+      gap: 10px; /* now perfectly equal */
+      width: 330px; /* 3*100px + 2*10px gap, adjust as needed */
+      max-width: 98vw;
       margin-bottom: 7px;
       margin-top: 1px;
       padding: 0;
@@ -55,7 +55,7 @@
       align-items: stretch;
     }
     .option {
-      font-size: 2.9em;
+      font-size: 2.7em;
       font-weight: bold;
       border: none;
       border-radius: 16px;
@@ -65,13 +65,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 66px;
-      min-height: 66px;
-      max-width: 110px;
-      max-height: 110px;
+      min-width: 88px;
+      min-height: 88px;
+      max-width: 100px;
+      max-height: 100px;
       user-select: none;
       box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-      margin: 0 auto;
+      margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
@@ -81,7 +81,7 @@
     .white {
       background: #fff;
       color: #212;
-      border: 3.2px solid #111 !important;
+      border: 3px solid #111 !important;
       box-sizing: border-box;
     }
     .black { background: #111; color: #fff;}
@@ -94,15 +94,14 @@
     .btn:active { background: #1855b6;}
     .hide { display: none;}
     .summary { text-align: center; margin-top: 20px;}
-    @media (max-width:480px) {
-      .container { max-width: 100vw; margin-top: 2vw; padding: 1vw 0 2vw 0;}
-      .question { font-size: 1.06em;}
-      .options { max-width: 99vw; gap: 6px;}
-      .option { min-width: 60px; min-height: 60px; font-size: 2.1em; max-width: 98vw;}
-    }
-    @media (max-width:350px) {
+    @media (max-width:370px) {
       .container {padding:0;}
-      .option {font-size:1em; min-width:38px; min-height:38px;}
+      .options {width: 97vw; gap: 6px;}
+      .option {font-size:1.25em; min-width:30px; min-height:30px;}
+    }
+    @media (max-width:470px) {
+      .options { width: 99vw; gap: 6vw;}
+      .option { min-width: 22vw; min-height: 22vw; max-width: 29vw; max-height: 29vw; font-size: 2.1em;}
     }
   </style>
 </head>
