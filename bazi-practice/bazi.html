@@ -143,6 +143,12 @@ const liuChong = [
   ['辰','戌'], ['巳','亥']
 ];
 
+// 六害 (Six Harms) pairs
+const liuHai = [
+  ['子','未'], ['丑','午'], ['寅','巳'], ['卯','辰'],
+  ['申','亥'], ['酉','戌']
+];
+
 // 三合 (Three Harmonies)
 const sanHe = [
   ['申','子','辰'], // Water
@@ -173,6 +179,11 @@ function buildQuestions(num) {
     allQ.push({type:'liuchong', base:a, answer:b});
     allQ.push({type:'liuchong', base:b, answer:a});
   });
+  // 六害 pairs (both directions)
+  liuHai.forEach(([a,b])=>{
+    allQ.push({type:'liuhai', base:a, answer:b});
+    allQ.push({type:'liuhai', base:b, answer:a});
+  });
   // 三合 groups (all directions, missing branch)
   sanHe.forEach(group=>{
     group.forEach((base, idx)=>{
@@ -188,6 +199,7 @@ function buildQuestions(num) {
 function questionText(q) {
   if(q.type==='liuhe') return `What is the <b>六合</b> (Six Harmony) pair for 「${q.base}」?`;
   if(q.type==='liuchong') return `What is the <b>六冲</b> (Six Clash) pair for 「${q.base}」?`;
+  if(q.type==='liuhai') return `What is the <b>六害</b> (Six Harm) pair for 「${q.base}」?`;
   if(q.type==='sanhe') {
     return `Which TWO branches form a <b>三合</b> (Three Harmony) group with 「${q.base}」?`;
   }
