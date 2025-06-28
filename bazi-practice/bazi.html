@@ -20,8 +20,8 @@
       border-radius: 16px;
       margin-top: 24px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-      padding: 10px 4px 6px 4px;
-      max-width: 410px;
+      padding: 10px 2vw 14px 2vw;
+      max-width: 420px;
       width: 99vw;
       min-height: 330px;
       display: flex;
@@ -35,44 +35,55 @@
       font-size: 1.1em;
     }
     .question {
-      font-size: 1.18em;
-      margin: 10px 0 6px 0;
+      font-size: 1.20em;
+      margin: 10px 0 12px 0;
       text-align: center;
       min-height: 38px;
     }
     .options {
       width: 100%;
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 10px;
       margin-bottom: 6px;
-      margin-top: 2px;
-      justify-items: center;
-      align-items: center;
+      margin-top: 4px;
+      justify-items: stretch;
+      align-items: stretch;
     }
     .option {
-      background: #f1f3f8;
-      border: none;
-      border-radius: 9px;
-      font-size: 2.1em;
+      font-size: 2em;
       font-weight: bold;
-      min-width: 42px;
-      min-height: 42px;
+      border: none;
+      border-radius: 13px;
       aspect-ratio: 1/1;
       cursor: pointer;
-      transition: background .17s,transform .13s;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.035);
+      transition: background .17s, color .13s, transform .11s, border .13s;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
+      min-width: 48px;
+      min-height: 48px;
+      max-width: 62px;
+      max-height: 62px;
       user-select: none;
-      line-height: 1.1;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin: 0 auto;
+      padding: 0;
     }
-    .option.correct { background: #a7e3b1; }
-    .option.wrong { background: #ffb8b8; }
-    .option.selected { border: 2px solid #0078ff; }
-    .option:disabled { opacity: .63; }
+    .option:disabled { opacity: .62; }
+    .green { background: #25b259; color: #fff;}
+    .red { background: #d92b2b; color: #fff;}
+    .white {
+      background: #fff;
+      color: #212;
+      border: 2.5px solid #111 !important;
+      box-sizing: border-box;
+    }
+    .black { background: #111; color: #fff;}
+    .option.correct { outline: 3px solid #27ce65; box-shadow:0 0 0 3px #b4ffd0;}
+    .option.wrong { outline: 3px solid #ff8787; box-shadow:0 0 0 3px #ffd6d6;}
+    .option.selected { border: 2.2px solid #0078ff;}
     .score, .timer { color: #355; font-size: 1em; margin-bottom: 6px;}
     .controls { margin-bottom: 15px; }
     .btn { background: #3b82f6; color: white; border: none; border-radius: 10px; padding: 8px 14px; font-size: .99em; margin:0 6px 0 0; cursor: pointer;}
@@ -80,15 +91,15 @@
     .hide { display: none;}
     .summary { text-align: center; margin-top: 20px;}
     @media (max-width:480px) {
-      .container { max-width: 99vw; margin-top: 2vw; padding: 2vw 0 2vw 0;}
+      .container { max-width: 99vw; margin-top: 2vw; padding: 1vw 0 2vw 0;}
       h2 { font-size: .98em;}
-      .question { font-size: 1.05em;}
-      .options { gap: 5px;}
-      .option { min-width: 30px; min-height: 30px; font-size: 1.4em;}
+      .question { font-size: 1.03em;}
+      .options { gap: 7px;}
+      .option { min-width: 42px; min-height: 42px; font-size: 1.35em; max-width: 50px; max-height: 50px;}
     }
-    @media (max-width:350px) {
+    @media (max-width:370px) {
       .container {padding:0;}
-      .option {font-size:1em;}
+      .option {font-size:1em; min-width:35px; min-height:35px;}
     }
   </style>
 </head>
@@ -109,7 +120,13 @@
     <div class="summary hide" id="summary"></div>
   </div>
 <script>
-const branches = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const branchOrder = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'];
+const colorClasses = [
+  'green','green','green', // row 1
+  'red','red','red',       // row 2
+  'white','white','white', // row 3
+  'black','black','black'  // row 4
+];
 
 // 六合 (Six Harmonies) pairs
 const liuHe = [
@@ -178,18 +195,18 @@ function renderOptions(q) {
   const optionsDiv = document.getElementById('options');
   optionsDiv.innerHTML = '';
   if(q.type==='sanhe') {
-    branches.forEach(b=>{
+    branchOrder.forEach((b, i)=>{
       const btn = document.createElement('button');
       btn.textContent = b;
-      btn.className = 'option';
+      btn.className = 'option ' + colorClasses[i];
       btn.onclick = ()=>selectSanhe(btn, b);
       optionsDiv.appendChild(btn);
     });
   } else {
-    branches.forEach(b=>{
+    branchOrder.forEach((b, i)=>{
       const btn = document.createElement('button');
       btn.textContent = b;
-      btn.className = 'option';
+      btn.className = 'option ' + colorClasses[i];
       btn.onclick = ()=>selectOption(btn, b);
       optionsDiv.appendChild(btn);
     });
@@ -229,7 +246,7 @@ function checkSanheAnswer() {
   setTimeout(()=>{
     questionIndex++;
     nextQuestionOrEnd();
-  }, 750);
+  }, 800);
 }
 
 function selectOption(btn, b) {
