@@ -2,188 +2,269 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Ba Zi Earthly Branch Pairs Quiz</title>
+  <title>Ba Zi Earthly Branches Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      background: #f5f5f5;
-      font-family: system-ui, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      min-height: 100vh;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .container {
-      background: white;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      border-radius: 16px;
-      margin-top: 40px;
-      padding: 24px 18px 18px 18px;
-      max-width: 380px;
-      width: 98vw;
-      min-height: 340px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: box-shadow 0.2s;
-    }
-    h2 {
-      font-size: 1.4rem;
-      margin-bottom: 1.2em;
-      letter-spacing: 1px;
-      color: #222;
-    }
-    .question {
-      font-size: 1.2em;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    .options {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 22px;
-    }
-    .option {
-      background: #f1f3f8;
-      border: none;
-      padding: 16px 8px;
-      border-radius: 10px;
-      font-size: 1.1em;
-      cursor: pointer;
-      transition: background 0.2s;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-      text-align: center;
-    }
-    .option.correct {
-      background: #a7e3b1;
-    }
-    .option.wrong {
-      background: #ffb8b8;
-    }
-    .score {
-      margin-bottom: 16px;
-      color: #555;
-      font-size: 1em;
-    }
-    .next-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 10px 28px;
-      font-size: 1em;
-      cursor: pointer;
-      margin-top: 6px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
-      letter-spacing: 1px;
-    }
-    .next-btn:active {
-      background: #1855b6;
-    }
-    @media (max-width: 400px) {
-      .container { padding: 12px 3px 8px 3px; }
-      h2 { font-size: 1.1rem; }
-    }
+    body { background: #f5f5f5; font-family: system-ui,sans-serif; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+    .container { background: #fff; border-radius: 18px; margin-top: 36px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); padding: 18px 8px 10px 8px; max-width:410px; width:98vw; min-height:375px; display:flex; flex-direction:column; align-items:center; }
+    h2 { margin-bottom: .8em; letter-spacing:1px; color:#244; font-size:1.2em;}
+    .question { font-size:1.13em; margin: 16px 0 12px 0; text-align:center;}
+    .options { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px;}
+    .option { background: #f1f3f8; border:none; border-radius: 10px; font-size:1.06em; padding:14px 4px; cursor:pointer; transition:background .2s; box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+    .option.correct { background: #a7e3b1;}
+    .option.wrong { background: #ffb8b8;}
+    .option:disabled { opacity:.67; }
+    .score, .timer { color:#355; font-size:.97em; margin-bottom:8px;}
+    .controls { margin-bottom:18px;}
+    .btn { background:#3b82f6; color:white; border:none; border-radius:10px; padding:8px 18px; font-size:1em; margin:0 7px 0 0; cursor:pointer;}
+    .btn:active { background:#1855b6;}
+    .next-btn { background: #60b252; margin-top:10px; }
+    .hide { display:none;}
+    .summary { text-align:center; margin-top:25px; }
+    @media (max-width:420px){.container{padding:8px 2px 6px 2px;}}
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Earthly Branch 六合 Quiz</h2>
-    <div class="score" id="score">Score: 0/0</div>
-    <div class="question" id="question">Loading...</div>
-    <div class="options" id="options"></div>
-    <button class="next-btn" id="nextBtn" style="display:none;">Next</button>
+    <h2>Ba Zi Earthly Branches Quiz</h2>
+    <div class="controls" id="controls">
+      <span>Questions:</span>
+      <button class="btn" onclick="startQuiz(10)">10</button>
+      <button class="btn" onclick="startQuiz(25)">25</button>
+      <button class="btn" onclick="startQuiz(50)">50</button>
+      <button class="btn" onclick="startQuiz(100)">100</button>
+    </div>
+    <div class="score hide" id="score"></div>
+    <div class="timer hide" id="timer"></div>
+    <div class="question hide" id="question"></div>
+    <div class="options hide" id="options"></div>
+    <button class="next-btn hide" id="nextBtn" onclick="nextQuestion()">Next</button>
+    <div class="summary hide" id="summary"></div>
   </div>
 
-  <script>
-    // 六合 pairs
-    const pairs = [
-      { a: '子', b: '丑' }, // Rat + Ox
-      { a: '寅', b: '亥' }, // Tiger + Pig
-      { a: '卯', b: '戌' }, // Rabbit + Dog
-      { a: '辰', b: '酉' }, // Dragon + Rooster
-      { a: '巳', b: '申' }, // Snake + Monkey
-      { a: '午', b: '未' }  // Horse + Goat
-    ];
-    const branches = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+<script>
+const branches = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
 
-    function getRandomInt(max) {
-      return Math.floor(Math.random() * max);
-    }
+// 六合 (Six Harmonies) pairs
+const liuHe = [
+  ['子','丑'], ['寅','亥'], ['卯','戌'], ['辰','酉'],
+  ['巳','申'], ['午','未']
+];
 
-    let currentPair, isAnswering = true;
-    let score = 0, total = 0;
+// 六冲 (Six Clashes) pairs
+const liuChong = [
+  ['子','午'], ['丑','未'], ['寅','申'], ['卯','酉'],
+  ['辰','戌'], ['巳','亥']
+];
 
-    function generateQuestion() {
-      isAnswering = true;
-      document.getElementById('nextBtn').style.display = 'none';
+// 三合 (Three Harmonies)
+const sanHe = [
+  ['申','子','辰'], // Water
+  ['亥','卯','未'], // Wood
+  ['寅','午','戌'], // Fire
+  ['巳','酉','丑']  // Metal
+];
 
-      // Randomly choose left/right from pair, and swap question direction
-      const pair = pairs[getRandomInt(pairs.length)];
-      const flip = Math.random() > 0.5;
-      currentPair = { 
-        base: flip ? pair.a : pair.b, 
-        answer: flip ? pair.b : pair.a 
-      };
+let roundQuestions = 10;
+let questions = [];
+let questionIndex = 0;
+let score = 0;
+let timerInterval, timePerQuestion = 15, timeLeft = 0, totalTime = 0, overallStart = 0;
 
-      // Build question string
-      document.getElementById('question').textContent = `What is the 六合 (Six Harmony) pair for 「${currentPair.base}」?`;
+// Utility for shuffling
+function shuffle(arr) {
+  return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+}
 
-      // Generate options: right answer + 3 random wrong
-      let options = [currentPair.answer];
-      let wrongs = branches.filter(b => b !== currentPair.answer && b !== currentPair.base);
-      for (let i = 0; i < 3; i++) {
-        let idx = getRandomInt(wrongs.length);
-        options.push(wrongs[idx]);
-        wrongs.splice(idx, 1);
-      }
-      // Shuffle
-      options = options.sort(() => Math.random() - 0.5);
+// Generate all possible question types
+function buildQuestions(num) {
+  let allQ = [];
 
-      // Display options
-      const optionsDiv = document.getElementById('options');
-      optionsDiv.innerHTML = '';
-      options.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.textContent = opt;
-        btn.className = 'option';
-        btn.onclick = () => chooseAnswer(btn, opt);
-        optionsDiv.appendChild(btn);
-      });
+  // 六合 pairs (both directions)
+  liuHe.forEach(([a,b])=>{
+    allQ.push({type:'liuhe', base:a, answer:b});
+    allQ.push({type:'liuhe', base:b, answer:a});
+  });
 
-      // Update score
-      document.getElementById('score').textContent = `Score: ${score}/${total}`;
-    }
+  // 六冲 pairs (both directions)
+  liuChong.forEach(([a,b])=>{
+    allQ.push({type:'liuchong', base:a, answer:b});
+    allQ.push({type:'liuchong', base:b, answer:a});
+  });
 
-    function chooseAnswer(btn, selected) {
-      if (!isAnswering) return;
+  // 三合 groups (all directions, missing branch)
+  sanHe.forEach(group=>{
+    group.forEach((base, idx)=>{
+      let ans = group.filter((_,i)=>i!==idx);
+      allQ.push({type:'sanhe', base:base, answer:ans, group});
+    });
+  });
+
+  // Shuffle and slice to num
+  allQ = shuffle(allQ);
+  if(num>allQ.length) num = allQ.length;
+  return allQ.slice(0,num);
+}
+
+// Question text builder
+function questionText(q) {
+  if(q.type==='liuhe') return `What is the <b>六合</b> (Six Harmony) pair for 「${q.base}」?`;
+  if(q.type==='liuchong') return `What is the <b>六冲</b> (Six Clash) pair for 「${q.base}」?`;
+  if(q.type==='sanhe') {
+    return `Which TWO branches form a <b>三合</b> (Three Harmony) group with 「${q.base}」?`;
+  }
+  return '';
+}
+
+// Render options
+function renderOptions(q) {
+  const optionsDiv = document.getElementById('options');
+  optionsDiv.innerHTML = '';
+  if(q.type==='sanhe') {
+    // Show all 12 branches, select 2
+    branches.forEach(b=>{
+      const btn = document.createElement('button');
+      btn.textContent = b;
+      btn.className = 'option';
+      btn.onclick = ()=>selectSanhe(btn, b);
+      optionsDiv.appendChild(btn);
+    });
+  } else {
+    // Show all 12, single pick
+    branches.forEach(b=>{
+      const btn = document.createElement('button');
+      btn.textContent = b;
+      btn.className = 'option';
+      btn.onclick = ()=>selectOption(btn, b);
+      optionsDiv.appendChild(btn);
+    });
+  }
+}
+
+// For 三合, allow selecting 2
+let sanheSelected = [];
+function selectSanhe(btn, b) {
+  if(sanheSelected.includes(b)) {
+    btn.classList.remove('selected');
+    sanheSelected = sanheSelected.filter(x=>x!==b);
+    return;
+  }
+  if(sanheSelected.length<2) {
+    btn.classList.add('selected');
+    sanheSelected.push(b);
+    if(sanheSelected.length===2) checkSanheAnswer();
+  }
+}
+
+function checkSanheAnswer() {
+  isAnswering = false;
+  let q = questions[questionIndex];
+  // Check if selected set equals answer
+  let correct = JSON.stringify([...q.answer].sort())===JSON.stringify([...sanheSelected].sort());
+  document.querySelectorAll('.option').forEach(btn=>{
+    if(q.answer.includes(btn.textContent)) btn.classList.add('correct');
+    else if(sanheSelected.includes(btn.textContent)) btn.classList.add('wrong');
+    btn.disabled = true;
+  });
+  if(correct) score++;
+  document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1}`;
+  clearInterval(timerInterval);
+  document.getElementById('nextBtn').classList.remove('hide');
+}
+
+let isAnswering = true;
+function selectOption(btn, b) {
+  if(!isAnswering) return;
+  isAnswering = false;
+  let q = questions[questionIndex];
+  let correct = (b === q.answer);
+  document.querySelectorAll('.option').forEach(option=>{
+    if(option.textContent === q.answer) option.classList.add('correct');
+    if(option.textContent === b && !correct) option.classList.add('wrong');
+    option.disabled = true;
+  });
+  if(correct) score++;
+  document.getElementById('score').textContent = `Score: ${score}/${questionIndex+1}`;
+  clearInterval(timerInterval);
+  document.getElementById('nextBtn').classList.remove('hide');
+}
+
+function startQuiz(n) {
+  roundQuestions = n;
+  questions = buildQuestions(n);
+  questionIndex = 0;
+  score = 0;
+  overallStart = Date.now();
+  document.getElementById('controls').classList.add('hide');
+  document.getElementById('score').classList.remove('hide');
+  document.getElementById('timer').classList.remove('hide');
+  nextQuestion();
+}
+
+function nextQuestion() {
+  isAnswering = true;
+  sanheSelected = [];
+  document.getElementById('nextBtn').classList.add('hide');
+  if(questionIndex >= questions.length) return showSummary();
+  let q = questions[questionIndex];
+  document.getElementById('score').textContent = `Score: ${score}/${questionIndex}`;
+  document.getElementById('question').innerHTML = questionText(q);
+  document.getElementById('question').classList.remove('hide');
+  document.getElementById('options').classList.remove('hide');
+  renderOptions(q);
+  // Timer per question
+  timeLeft = timePerQuestion;
+  updateTimer();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    updateTimer();
+    if(timeLeft<=0) {
+      clearInterval(timerInterval);
+      lockOptions(q);
+      document.getElementById('nextBtn').classList.remove('hide');
       isAnswering = false;
-      total++;
-      // Mark all
-      [...document.querySelectorAll('.option')].forEach(o => {
-        if (o.textContent === currentPair.answer) {
-          o.classList.add('correct');
-        }
-        if (o.textContent === selected && selected !== currentPair.answer) {
-          o.classList.add('wrong');
-        }
-        o.disabled = true;
-      });
-      // Update score
-      if (selected === currentPair.answer) score++;
-      document.getElementById('score').textContent = `Score: ${score}/${total}`;
-      document.getElementById('nextBtn').style.display = '';
     }
+  },1000);
+}
 
-    document.getElementById('nextBtn').onclick = generateQuestion;
+function updateTimer() {
+  let t = Math.max(0, timeLeft);
+  document.getElementById('timer').innerHTML = `<b>Time:</b> ${t}s`;
+}
 
-    // Initial question
-    window.onload = generateQuestion;
-  </script>
+function lockOptions(q) {
+  // Reveal answer if time runs out
+  document.querySelectorAll('.option').forEach(btn=>{
+    btn.disabled = true;
+    if(q.type==='sanhe' && q.answer.includes(btn.textContent)) btn.classList.add('correct');
+    if(q.type!=='sanhe' && btn.textContent === q.answer) btn.classList.add('correct');
+  });
+}
+
+// Show result summary
+function showSummary() {
+  clearInterval(timerInterval);
+  let t = Math.floor((Date.now()-overallStart)/1000);
+  document.getElementById('question').classList.add('hide');
+  document.getElementById('options').classList.add('hide');
+  document.getElementById('score').classList.add('hide');
+  document.getElementById('timer').classList.add('hide');
+  document.getElementById('nextBtn').classList.add('hide');
+  document.getElementById('summary').classList.remove('hide');
+  document.getElementById('summary').innerHTML = `
+    <h3>Quiz Finished!</h3>
+    <p>Score: <b>${score} / ${questions.length}</b></p>
+    <p>Total time: <b>${t} seconds</b></p>
+    <button class="btn" onclick="resetQuiz()">Try Again</button>
+  `;
+}
+
+function resetQuiz() {
+  document.getElementById('summary').classList.add('hide');
+  document.getElementById('controls').classList.remove('hide');
+}
+
+</script>
 </body>
 </html>
