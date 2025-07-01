@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Google Calendar Events</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+    --main-bg: #f3f4fa;
+    --event-bg: #fff;
+    --primary: #5661b3;
+    --secondary: #7c3aed;
+    --text: #22223b;
+    --subtle-text: #7d7d9c;
+    --card-shadow: 0 2px 8px rgba(80,60,120,0.08);
+    --grid-time-width: 52px;
+    --hour-row-height: 40px;
+    --popup-bg: #fff;
+    --popup-border: #dbeafe;
+}
+html, body {
+    margin: 0; padding: 0; background: var(--main-bg); color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+body { max-width: 480px; margin: 0 auto; padding: 0 0 32px 0; min-height: 100vh; }
+header {
+    background: linear-gradient(90deg, var(--primary) 60%, var(--secondary) 100%);
+    color: #fff; padding: 32px 16px 24px 16px; text-align: center;
+    border-radius: 0 0 32px 32px; box-shadow: var(--card-shadow);
+}
+h1 { margin: 0; font-size: 2em; font-weight: 700; letter-spacing: 1px; }
+#now { font-size: 1.1em; color: #e0e7ff; margin: 8px 0 0 0; }
+#viewSwitcher {
+    display: flex; gap: 6px; justify-content: center; margin: 18px 0 0 0;
+}
+.view-btn {
+    flex: 1 1 0px;
+    background: #e0e7ff; color: var(--primary); border: none;
+    font-size: 1em; padding: 10px 0; border-radius: 12px; cursor: pointer;
+    font-weight: 600; transition: background 0.16s;
+}
+.view-btn.active { background: var(--secondary); color: #fff; }
+#events { margin: 18px 10px 0 10px; }
+.group-label {
+    color: var(--secondary); font-weight: 600;
+    margin: 20px 0 6px 8px; font-size: 1.07em;
+}
+.all-day-bar {
+    margin-bottom: 8px;
+    color: #fff;
+    background: var(--secondary);
+    border-radius: 9px;
+    padding: 9px 14px;
+    font-weight: 600;
+    box-shadow: 0 2px 7px rgba(124,58,237,0.08);
+    display: inline-block;
+    font-size: 1.06em;
+}
+.time-grid-outer {
+    position: relative;
+    background: var(--event-bg);
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 18px;
+    width: 100%;
+    margin-top: 6px;
+    min-height: calc(var(--hour-row-height) * 18); /* for 6:00-23:00 */
+    overflow: visible;
+}
+.time-grid {
+    position: relative;
+    width: 100%;
+    padding-left: var(--grid-time-width);
+    border-radius: 12px;
+    box-sizing: border-box;
+    background: none;
+    height: calc(var(--hour-row-height) * 18);
+}
+.time-row {
+    position: absolute;
+    left: 0; right: 0;
+    height: var(--hour-row-height);
+    border-bottom: 1px solid #f0f0fa;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+}
+.time-label {
+    position: absolute;
+    left: 0;
+    width: var(--grid-time-width);
+    top: 0;
+    height: var(--hour-row-height);
+    color: var(--subtle-text);
+    font-size: 0.98em;
+    padding: 7px 6px 0 0;
+    text-align: right;
+    background: #fafaff;
+    border-right: 1px solid #f0f0fa;
+    z-index: 2;
+    box-sizing: border-box;
+    font-variant-numeric: tabular-nums;
+}
+.event-block {
+    position: absolute;
+    left: calc(var(--grid-time-width) + 6px);
+    right: 10px;
+    background: linear-gradient(90deg, var(--primary) 85%, var(--secondary) 100%);
+    color: #fff;
+    border-radius: 8px;
+    padding: 7px 13px;
+    font-size: 1em;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(86,97,179,0.08);
+    cursor: pointer;
+    border-left: 4px solid #7c3aed;
+    overflow: hidden;
+    z-index: 3;
+    min-height: 38px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.event-block span {
+    font-size: 0.92em;
+    font-weight: 400;
+    margin-left: 2px;
+}
+.day-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.day-nav-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 16px;
+    font-size: 1.18em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.14s;
+}
+.day-nav-btn:active { background: var(--secondary);}
+.day-nav-btn.disabled, .day-nav-btn:disabled { background: #d1d5db; color: #888; cursor: not-allowed;}
+.day-nav-date {
+    font-size: 1.13em;
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 170px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    background: #e0e7ff;
+    padding: 6px 16px;
+    border-radius: 8px;
+    border: 1px solid #e0e7ff;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.day-nav-date:active {
+    background: #c7d2fe;
+}
+#calendarPopupBG {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(50,46,69,0.19);
+    z-index: 50;
+    display: none;
+}
+#calendarPopup {
+    background: var(--popup-bg);
+    border: 2px solid var(--popup-border);
+    box-shadow: 0 8px 32px rgba(90,90,160,0.17);
+    border-radius: 20px;
+    padding: 18px 12px 14px 12px;
+    width: 92vw;
+    max-width: 340px;
+    margin: 60px auto 0 auto;
+    position: relative;
+    z-index: 51;
+}
+#calendarPopup table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 7px;
+}
+#calendarPopup th, #calendarPopup td {
+    width: 14.2%;
+    text-align: center;
+    padding: 5px;
+}
+#calendarPopup th {
+    color: var(--primary);
+    font-size: 0.97em;
+}
+.cal-today {
+    border-radius: 7px;
+    background: #c7d2fe;
+    font-weight: bold;
+}
+.cal-selected {
+    border: 2px solid var(--secondary);
+    border-radius: 9px;
+    background: #ede9fe;
+}
+.cal-has-events {
+    background: linear-gradient(135deg, #f3e8ff 60%, #ddd6fe 100%);
+    font-weight: bold;
+}
+.cal-day {
+    cursor: pointer;
+    transition: background 0.12s, border 0.12s;
+}
+.cal-day:hover {
+    background: #f3e8ff;
+}
+#calendarPopup .popup-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 5px;
+}
+#calendarPopup .popup-close {
+    cursor: pointer;
+    color: var(--subtle-text);
+    font-size: 1.16em;
+    border: none; background: none;
+}
+#calendarPopup .popup-close:active {
+    color: #b91c1c;
+}
+#calendarPopup .popup-month {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.07em;
+}
+.cal-arrow {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 1.2em;
+    color: var(--secondary);
+    padding: 2px 10px;
+    font-weight: bold;
+    border-radius: 7px;
+}
+.cal-arrow:active { background: #ede9fe;}
+@media (min-width: 600px) {
+    body { max-width: 600px; }
+    #events { margin: 32px 24px 0 24px; }
+    #calendarPopup { margin-top: 80px;}
+}
+</style>
+</head>
+<body>
+<header>
+    <h1>My Schedule</h1>
+    <div id="now"></div>
+</header>
+<div id="viewSwitcher">
+    <button class="view-btn active" id="dailyBtn">Daily</button>
+    <button class="view-btn" id="weeklyBtn">Weekly</button>
+    <button class="view-btn" id="monthlyBtn">Monthly</button>
+</div>
+<div id="events">Loading events...</div>
+<!-- Popup calendar overlay -->
+<div id="calendarPopupBG">
+  <div id="calendarPopup"></div>
+</div>
+<script>
+function updateNow() {
+    const nowDiv = document.getElementById('now');
+    const now = new Date();
+    nowDiv.textContent = now.toLocaleString('en-GB', {
+        weekday: 'long', year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    });
+}
+updateNow(); setInterval(updateNow, 1000);
+
+const calendarId = '355e1ad3d96160f27bb10c65ec5d4310503f3664065b70cbc7028dc19b7b9a75@group.calendar.google.com';
+const apiKey = 'AIzaSyAlIbxOW2Xi-kme6NKzZOWamTd54zO0hUI';
+const eventsDiv = document.getElementById('events');
+const now = new Date();
+let allEvents = [];
+let dailyViewDate = new Date(now);
+let eventDates = []; // Sorted list of YYYY-MM-DD dates that have events
+
+function toLocalYMD(date) {
+    const y = date.getFullYear();
+    const m = (date.getMonth()+1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+function ymdToLocalDate(ymd) {
+    const parts = ymd.split('-');
+    return new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+}
+
+fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&orderBy=startTime&singleEvents=true&maxResults=250&timeMin=${encodeURIComponent(now.toISOString())}`)
+    .then(response => response.json())
+    .then(data => {
+        if (!data.items) data.items = [];
+        allEvents = data.items.filter(event => {
+            const endTime = new Date(event.end.dateTime || event.end.date);
+            return endTime >= new Date();
+        });
+
+        let daysSet = new Set();
+        allEvents.forEach(ev => {
+            if(ev.start && ev.end) {
+                let startDate = ev.start.date || ev.start.dateTime;
+                let endDate = ev.end.date || ev.end.dateTime;
+                if (startDate && endDate) {
+                    let sd = new Date(startDate);
+                    let ed = new Date(endDate);
+                    if (!ev.start.dateTime && !ev.end.dateTime) ed.setDate(ed.getDate() - 1);
+                    for(let d = new Date(sd); d <= ed; d.setDate(d.getDate() + 1)) {
+                        daysSet.add(toLocalYMD(d));
+                    }
+                }
+            }
+        });
+        eventDates = Array.from(daysSet).sort();
+        showEvents('daily');
+    })
+    .catch(err => {
+        console.error(err);
+        eventsDiv.innerHTML = '<p style="text-align:center;color:#b91c1c;">An error occurred while loading events.</p>';
+    });
+
+document.getElementById('dailyBtn').onclick = () => { switchView('daily'); };
+document.getElementById('weeklyBtn').onclick = () => { switchView('weekly'); };
+document.getElementById('monthlyBtn').onclick = () => { switchView('monthly'); };
+
+function switchView(view) {
+    document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(view+'Btn').classList.add('active');
+    if(view === 'daily') {
+        let todayStr = toLocalYMD(new Date());
+        let idx = eventDates.findIndex(d => d >= todayStr);
+        dailyViewDate = idx >= 0 ? ymdToLocalDate(eventDates[idx]) : (eventDates.length ? ymdToLocalDate(eventDates[0]) : new Date(now));
+    }
+    showEvents(view);
+}
+
+function getHourHeight() { return 40; }
+
+function showEvents(view) {
+    eventsDiv.innerHTML = '';
+    if (!allEvents.length) {
+        eventsDiv.innerHTML = '<p style="text-align:center;color:var(--subtle-text);font-size:1.05em;">No upcoming events.</p>';
+        return;
+    }
+    if (view === 'daily') {
+        let currKey = toLocalYMD(dailyViewDate);
+        let idx = eventDates.indexOf(currKey);
+        eventsDiv.innerHTML += `
+        <div class="day-nav">
+            <button class="day-nav-btn" id="prevDayBtn">&#8678;</button>
+            <div class="day-nav-date" id="currentDayLabel"></div>
+            <button class="day-nav-btn" id="nextDayBtn">&#8680;</button>
+        </div>
+        `;
+        const currentDayLabel = document.getElementById('currentDayLabel');
+        currentDayLabel.textContent = dailyViewDate.toLocaleDateString('en-GB', {
+            weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+        });
+
+        // Popup calendar when clicking on date
+        currentDayLabel.onclick = function(e) {
+            e.stopPropagation();
+            showCalendarPopup(dailyViewDate);
+        };
+
+        // Navigation
+        const prevBtn = document.getElementById('prevDayBtn');
+        const nextBtn = document.getElementById('nextDayBtn');
+        if(idx > 0) {
+            prevBtn.onclick = function() {
+                dailyViewDate = ymdToLocalDate(eventDates[idx - 1]);
+                showEvents('daily');
+            };
+            prevBtn.disabled = false;
+            prevBtn.classList.remove('disabled');
+        } else {
+            prevBtn.onclick = null;
+            prevBtn.disabled = true;
+            prevBtn.classList.add('disabled');
+        }
+        if(idx !== -1 && idx < eventDates.length - 1) {
+            nextBtn.onclick = function() {
+                dailyViewDate = ymdToLocalDate(eventDates[idx + 1]);
+                showEvents('daily');
+            };
+            nextBtn.disabled = false;
+            nextBtn.classList.remove('disabled');
+        } else {
+            nextBtn.onclick = null;
+            nextBtn.disabled = true;
+            nextBtn.classList.add('disabled');
+        }
+
+        // Get events for this day
+        let todayEvents = allEvents.filter(event => {
+            if(event.start && event.end) {
+                let sd = event.start.date ? event.start.date : event.start.dateTime ? toLocalYMD(new Date(event.start.dateTime)) : null;
+                let ed = event.end.date ? event.end.date : event.end.dateTime ? toLocalYMD(new Date(event.end.dateTime)) : null;
+                if(sd && ed) {
+                    let eventStart = ymdToLocalDate(sd);
+                    let eventEnd = ymdToLocalDate(ed);
+                    if(event.start.date && event.end.date) {
+                        eventEnd.setDate(eventEnd.getDate()-1);
+                    }
+                    let ymd = toLocalYMD(dailyViewDate);
+                    let d = ymdToLocalDate(ymd);
+                    return d >= eventStart && d <= eventEnd;
+                }
+            }
+            return false;
+        });
+
+        // All-day events
+        const allDayEvents = todayEvents.filter(ev => !ev.start.dateTime);
+        if (allDayEvents.length) {
+            eventsDiv.innerHTML += '<div class="group-label">All Day</div>';
+            allDayEvents.forEach(event => {
+                eventsDiv.innerHTML += `<div class="all-day-bar">${event.summary || '(No Title)'}</div>`;
+            });
+        }
+
+        // Time grid from 6:00 to 23:00
+        eventsDiv.innerHTML += '<div class="group-label">Day Schedule</div>';
+        const startHour = 6, endHour = 23;
+        let gridHtml = `<div class="time-grid-outer" style="height:${(endHour-startHour+1)*getHourHeight()}px"><div class="time-grid" style="height:${(endHour-startHour+1)*getHourHeight()}px">`;
+        for (let h = startHour; h <= endHour; h++) {
+            gridHtml += `
+                <div class="time-row" style="top:${(h-startHour)*getHourHeight()}px;left:0;right:0;">
+                    <div class="time-label" style="top:0;left:0;">${h.toString().padStart(2,'0')}:00</div>
+                </div>
+            `;
+        }
+        gridHtml += '</div></div>';
+        eventsDiv.innerHTML += gridHtml;
+
+        // Place event blocks
+        const gridOuter = eventsDiv.querySelector('.time-grid-outer');
+        if (gridOuter) {
+            todayEvents.filter(ev => ev.start.dateTime).forEach(event => {
+                const start = new Date(event.start.dateTime);
+                const end = new Date(event.end.dateTime);
+                let startHour = start.getHours() + start.getMinutes()/60;
+                let endHour = end.getHours() + end.getMinutes()/60;
+                startHour = Math.max(startHour, 6);
+                endHour = Math.min(endHour, 23.99);
+                if (endHour <= 6 || startHour >= 24 || startHour > endHour) return;
+                const topPx = (startHour - 6) * getHourHeight();
+                const heightPx = Math.max(32, (endHour - startHour) * getHourHeight());
+                const displayStart = start.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                const displayEnd = end.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+                const block = document.createElement('div');
+                block.className = 'event-block';
+                block.style.top = topPx + 'px';
+                block.style.height = heightPx + 'px';
+                block.innerHTML = `
+                    ${event.summary || '(No Title)'}<span> (${displayStart} - ${displayEnd})</span>
+                    ${event.location ? `<div style="color:#fff;font-size:0.98em;font-weight:400;">📍 ${event.location}</div>` : ''}
+                    ${event.description ? `<div style="color:#eef;font-size:0.94em;font-weight:400;margin-top:4px;">${event.description}</div>` : ''}
+                `;
+                block.title = `${event.summary || '(No Title)'}\n${displayStart} - ${displayEnd}${event.location ? '\n' + event.location : ''}`;
+                gridOuter.appendChild(block);
+            });
+        }
+
+        // If no events at all for this day, show a message
+        if(todayEvents.length === 0){
+            eventsDiv.innerHTML += `<div style="color: var(--subtle-text); text-align:center; margin:16px 0 0 0;">No events for this day</div>`;
+        }
+    }
+}
+
+// --- CALENDAR POPUP CODE ---
+let calendarPopupBG = document.getElementById("calendarPopupBG");
+let calendarPopup = document.getElementById("calendarPopup");
+
+function showCalendarPopup(selectedDate) {
+    let currentMonth = selectedDate.getMonth();
+    let currentYear = selectedDate.getFullYear();
+    drawCalendar(currentYear, currentMonth, selectedDate);
+
+    calendarPopupBG.style.display = "block";
+    setTimeout(()=>{document.addEventListener("click", calendarBGHandler);}, 20);
+
+    function calendarBGHandler(e) {
+        if(!calendarPopup.contains(e.target)) {
+            hideCalendarPopup();
+        }
+    }
+}
+function hideCalendarPopup() {
+    calendarPopupBG.style.display = "none";
+    document.removeEventListener("click", calendarBGHandler, true);
+}
+function calendarBGHandler(e) {} // will be overwritten
+
+function drawCalendar(year, month, selectedDate) {
+    // Create calendar grid
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month+1, 0);
+    const startWeekDay = firstDay.getDay();
+    const today = new Date();
+    let ymdSelected = toLocalYMD(selectedDate);
+    let ymdToday = toLocalYMD(today);
+
+    let html = `
+      <div class="popup-header">
+        <button class="cal-arrow" id="calPrevMonth">&lt;</button>
+        <span class="popup-month">${firstDay.toLocaleString('default', {month:'long'})} ${year}</span>
+        <button class="cal-arrow" id="calNextMonth">&gt;</button>
+        <button class="popup-close" id="closeCalendarPopup" title="Close">&times;</button>
+      </div>
+      <table>
+        <tr>
+          <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+        </tr>
+    `;
+    let d = 1;
+    for(let i=0;i<6;i++) {
+        html += "<tr>";
+        for(let j=0;j<7;j++) {
+            if(i===0 && j<startWeekDay) {
+                html += "<td></td>";
+            } else if(d > lastDay.getDate()) {
+                html += "<td></td>";
+            } else {
+                let ymd = `${year}-${(month+1).toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+                let classes = ["cal-day"];
+                if(ymd === ymdToday) classes.push("cal-today");
+                if(ymd === ymdSelected) classes.push("cal-selected");
+                if(eventDates.includes(ymd)) classes.push("cal-has-events");
+                html += `<td class="${classes.join(' ')}" data-ymd="${ymd}">${d}</td>`;
+                d++;
+            }
+        }
+        html += "</tr>";
+        if(d > lastDay.getDate()) break;
+    }
+    html += "</table>";
+
+    calendarPopup.innerHTML = html;
+
+    document.getElementById('calPrevMonth').onclick = e => drawCalendar(month === 0 ? year-1 : year, month === 0 ? 11 : month-1, selectedDate);
+    document.getElementById('calNextMonth').onclick = e => drawCalendar(month === 11 ? year+1 : year, month === 11 ? 0 : month+1, selectedDate);
+    document.getElementById('closeCalendarPopup').onclick = hideCalendarPopup;
+
+    // Clicking a date selects it
+    Array.from(calendarPopup.querySelectorAll('.cal-day')).forEach(cell => {
+        cell.onclick = function(e) {
+            let ymd = cell.getAttribute('data-ymd');
+            dailyViewDate = ymdToLocalDate(ymd);
+            hideCalendarPopup();
+            showEvents('daily');
+        };
+    });
+}
+</script>
+</body>
+</html>
