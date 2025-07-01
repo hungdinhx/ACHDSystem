@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Google Calendar Events</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --main-bg: #f3f4fa;
+            --accent-bg: #e0e7ff;
+            --event-bg: #ffffff;
+            --primary: #5661b3;
+            --secondary: #7c3aed;
+            --text: #22223b;
+            --subtle-text: #7d7d9c;
+            --card-shadow: 0 2px 8px rgba(80,60,120,0.08);
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--main-bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 0 32px 0;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(90deg, var(--primary) 60%, var(--secondary) 100%);
+            color: #fff;
+            padding: 32px 16px 24px 16px;
+            text-align: center;
+            border-radius: 0 0 32px 32px;
+            box-shadow: var(--card-shadow);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2em;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        #now {
+            font-size: 1.1em;
+            color: #e0e7ff;
+            margin: 8px 0 0 0;
+        }
+        #events {
+            margin: 18px 10px 0 10px;
+        }
+        .event {
+            background: var(--event-bg);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 20px 16px;
+            margin-bottom: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            transition: box-shadow 0.18s;
+        }
+        .event strong {
+            font-size: 1.18em;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+        .event-date {
+            color: var(--subtle-text);
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+        @media (min-width: 600px) {
+            body {
+                max-width: 600px;
+            }
+            #events {
+                margin: 32px 24px 0 24px;
+            }
+        }
+        /* Touch enhancements */
+        .event:active {
+            box-shadow: 0 1px 4px rgba(80,60,120,0.18);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>My Schedule</h1>
+        <div id="now"></div>
+    </header>
+    <div id="events">Loading events...</div>
+
+    <script>
+        // Live clock
+        function updateNow() {
+            const nowDiv = document.getElementById('now');
+            const now = new Date();
+            // Format: Monday, 1 Jul 2025, 10:15 AM
+            nowDiv.textContent = now.toLocaleString('en-GB', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+        updateNow();
+        setInterval(updateNow, 1000);
+
+        // Calendar API
+        const calendarId = '355e1ad3d96160f27bb10c65ec5d4310503f3664065b70cbc7028dc19b7b9a75@group.calendar.google.com';
+        const apiKey = 'AIzaSyAlIbxOW2Xi-kme6NKzZOWamTd54zO0hUI';
+        const eventsDiv = document.getElementById('events');
+        const now = new Date();
+        const timeMin = now.toISOString();
+
+        fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?key=${apiKey}&orderBy=startTime&singleEvents=true&timeMin=${encodeURIComponent(timeMin)}`)
+            .then(response => response.json())
+            .then(data => {
+                eventsDiv.innerHTML = '';
+                if (!data.items || data.items.length === 0) {
+                    eventsDiv.innerHTML = '<p style=\"text-align:center;color:var(--subtle-text);font-size:1.05em;\">No upcoming events.</p>';
+                    return;
+                }
+                let eventsShown = 0;
+                data.items.forEach(event => {
+                    const endTime = new Date(event.end.dateTime || event.end.date);
+                    if (endTime < new Date()) return;
+                    eventsShown++;
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'event';
+
+                    const start = new Date(event.start.dateTime || event.start.date);
+                    const isAllDay = !event.start.dateTime;
+
+                    let dateString = '';
+                    if (isAllDay) {
+                        dateString = start.toLocaleDateString('en-GB', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        }) + ' (All day)';
+                    } else {
+                        dateString = start.toLocaleString('en-GB', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                    }
+                    eventDiv.innerHTML = `
+                        <strong>${event.summary || '(No Title)'}</strong>
+                        <span class="event-date">${dateString}</span>
+                        ${event.location ? `<div style="color:#7c3aed;font-size:0.98em;">📍 ${event.location}</div>` : ''}
+                        ${event.description ? `<div style="color:#5661b3;font-size:0.98em;margin-top:6px;">${event.description}</div>` : ''}
+                    `;
+
+                    eventsDiv.appendChild(eventDiv);
+                });
+                if (!eventsShown) {
+                    eventsDiv.innerHTML = '<p style=\"text-align:center;color:var(--subtle-text);font-size:1.05em;\">No upcoming events.</p>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                eventsDiv.innerHTML = '<p style="text-align:center;color:#b91c1c;">An error occurred while loading events.</p>';
+            });
+    </script>
+</body>
+</html>
